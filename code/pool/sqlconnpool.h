@@ -1,3 +1,11 @@
+/*
+ * @Author: zch CHONG589@outlook.com
+ * @Date: 2024-12-07 10:40:56
+ * @LastEditors: zch CHONG589@outlook.com
+ * @LastEditTime: 2024-12-07 17:50:02
+ * @FilePath: /桌面/TinyWebserver/code/pool/sqlconnpool.h
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #ifndef SQLCONNPOOL_H
 #define SQLCONNPOOL_H
 
@@ -16,16 +24,21 @@ class SqlConnPool {
 public:
     static SqlConnPool *Instance();
 
-    MYSQL *GetConn();
-    void FreeConn(MYSQL * conn);
+    MYSQL *GetConn();// 在SqlConnRAII中的构造函数中调用
+    void FreeConn(MYSQL * conn);//SqlConnRAII中的析构函数中调用
     int GetFreeConnCount();
 
+    //在服务器获取连接池时，需要初始化连接池
     void Init(const char* host, uint16_t port,
               const char* user,const char* pwd, 
               const char* dbName, int connSize);
+
+    //服务器使用完后，需要执行这个关闭连接池。SqlConnPool 的
+    //析构函数也要用到这个。
     void ClosePool();
 
 private:
+    //default 表示这个构造函数是默认构造函数，不需要参数
     SqlConnPool() = default;
     ~SqlConnPool() { ClosePool(); }
 
@@ -85,5 +98,14 @@ private:
     MYSQL *sql_;
     SqlConnPool* connpool_;
 };
+
+/**
+ * 对于 SqlConnRAII 的使用：
+ * 服务器初始化时肯定会建立一个 SqlConnPool 对象，即存放连接的池，
+ * 然后用它里面的方法进行初始化，这个是使用单例模式创建的，只有一个
+ * 实体，后面获取的都是同一个。需要创建一个连接放进池子时，就需要创建
+ * 一个 MYSQL 指针对象，将它的地址传给 SqlConnRAII 的构造函数，然后再
+ * 将连接池传进去，这样就可以将创建的连接放进去了。
+ */
 
 #endif // SQLCONNPOOL_H
