@@ -21,6 +21,11 @@
 
 class WebServer {
 public:
+    /**
+     * 主要做初始化日志，数据连接池，配置事件模式，创建 epoll 对象
+     * 等，以及它的一系列操作（setsockopt,bind,listen,还有增加监
+     * 听事件）。设置非阻塞。
+     */
     WebServer(
         int port, int trigMode, int timeoutMS, 
         int sqlPort, const char* sqlUser, const  char* sqlPwd, 
@@ -48,8 +53,6 @@ private:
     void OnProcess(HttpConn* client);
 
     static const int MAX_FD = 65536;
-
-    static int SetFdNonblock(int fd);
 
     int port_;
     bool openLinger_;

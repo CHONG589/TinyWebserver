@@ -266,19 +266,13 @@ bool WebServer::InitSocket_() {
         close(listenFd_);
         return false;
     }
-    ret = epoller_->AddFd(listenFd_,  listenEvent_ | EPOLLIN);  // 将监听套接字加入epoller
-    if(ret == 0) {
+    ret = iom->addEvent(listenFd_, IOManager::READ, std::bind(&WebServer::DealListen_, this));
+    //ret = epoller_->AddFd(listenFd_,  listenEvent_ | EPOLLIN);  // 将监听套接字加入epoller
+    if(ret) {
         LOG_ERROR("Add listen error!");
         close(listenFd_);
         return false;
-    }
-    SetFdNonblock(listenFd_);   
+    } 
     LOG_INFO("Server port:%d", port_);
     return true;
-}
-
-// 设置非阻塞
-int WebServer::SetFdNonblock(int fd) {
-    assert(fd > 0);
-    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
 }
