@@ -3,19 +3,18 @@
 using namespace std;
 
 WebServer::WebServer(
-            int port, int trigMode, int timeoutMS,
+            int port, int trigMode, 
             int sqlPort, const char* sqlUser, 
             const  char* sqlPwd, const char* dbName, 
             int connPoolNum, int threadNum, bool openLog, 
             int logLevel, int logQueSize): 
-            port_(port), timeoutMS_(timeoutMS), isClose_(false),
-            timer_(new HeapTimer()), 
+            port_(port), timeoutMS_(timeoutMS), timer_(new HeapTimer()), 
             threadpool_(new ThreadPool(threadNum)), epoller_(new Epoller()) {
 
     // 是否打开日志标志
     if(openLog) {
         Log::Instance()->init(logLevel, "./log", ".log", logQueSize);
-        if(isClose_) { LOG_ERROR("========== Server init error!=========="); }
+        //if(isClose_) { LOG_ERROR("========== Server init error!=========="); }
         else {
             LOG_INFO("========== Server init ==========");
             LOG_INFO("Listen Mode: %s, OpenConn Mode: %s",
@@ -35,16 +34,21 @@ WebServer::WebServer(
 
     // 初始化操作
     SqlConnPool::Instance()->Init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);  // 连接池单例的初始化
+
+    iom_ = new IOManager(threadNum + 1, false);
+    iom_->schedule(InitSocket_);
+
     // 初始化事件和初始化socket(监听)
     InitEventMode_(trigMode);
-    if(!InitSocket_()) { isClose_ = true;}
+    // if(!InitSocket_()) { isClose_ = true;}
 }
 
 WebServer::~WebServer() {
     close(listenFd_);
-    isClose_ = true;
+    //isClose_ = true;
     free(srcDir_);
     SqlConnPool::Instance()->ClosePool();
+    delete iom_;
 }
 
 void WebServer::InitEventMode_(int trigMode) {
@@ -71,40 +75,40 @@ void WebServer::InitEventMode_(int trigMode) {
     HttpConn::isET = (connEvent_ & EPOLLET);
 }
 
-void WebServer::Start() {
-    int timeMS = -1;  /* epoll wait timeout == -1 无事件将阻塞 */
-    if(!isClose_) { LOG_INFO("========== Server start =========="); }
-    while(!isClose_) {
-        if(timeoutMS_ > 0) {
-            // 获取下一次的超时等待事件(至少这个时间才会有用户过期，
-            // 每次关闭超时连接则需要有新的请求进来)
-            timeMS = timer_->GetNextTick();     
-        }
-        int eventCnt = epoller_->Wait(timeMS);
-        for(int i = 0; i < eventCnt; i++) {
-            /* 处理事件 */
-            int fd = epoller_->GetEventFd(i);
-            uint32_t events = epoller_->GetEvents(i);
-            if(fd == listenFd_) {
-                DealListen_();
-            }
-            else if(events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
-                assert(users_.count(fd) > 0);
-                CloseConn_(&users_[fd]);
-            }
-            else if(events & EPOLLIN) {
-                assert(users_.count(fd) > 0);
-                DealRead_(&users_[fd]);
-            }
-            else if(events & EPOLLOUT) {
-                assert(users_.count(fd) > 0);
-                DealWrite_(&users_[fd]);
-            } else {
-                LOG_ERROR("Unexpected event");
-            }
-        }
-    }
-}
+// void WebServer::Start() {
+//     int timeMS = -1;  /* epoll wait timeout == -1 无事件将阻塞 */
+//     //if(!isClose_) { LOG_INFO("========== Server start =========="); }
+//     while(!isClose_) {
+//         if(timeoutMS_ > 0) {
+//             // 获取下一次的超时等待事件(至少这个时间才会有用户过期，
+//             // 每次关闭超时连接则需要有新的请求进来)
+//             timeMS = timer_->GetNextTick();     
+//         }
+//         int eventCnt = epoller_->Wait(timeMS);
+//         for(int i = 0; i < eventCnt; i++) {
+//             /* 处理事件 */
+//             int fd = epoller_->GetEventFd(i);
+//             uint32_t events = epoller_->GetEvents(i);
+//             if(fd == listenFd_) {
+//                 DealListen_();
+//             }
+//             else if(events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
+//                 assert(users_.count(fd) > 0);
+//                 CloseConn_(&users_[fd]);
+//             }
+//             else if(events & EPOLLIN) {
+//                 assert(users_.count(fd) > 0);
+//                 DealRead_(&users_[fd]);
+//             }
+//             else if(events & EPOLLOUT) {
+//                 assert(users_.count(fd) > 0);
+//                 DealWrite_(&users_[fd]);
+//             } else {
+//                 LOG_ERROR("Unexpected event");
+//             }
+//         }
+//     }
+// }
 
 void WebServer::SendError_(int fd, const char*info) {
     assert(fd > 0);
@@ -122,14 +126,29 @@ void WebServer::CloseConn_(HttpConn* client) {
     client->Close();
 }
 
+// 处理读事件，主要逻辑是将OnRead加入线程池的任务队列中
+// void WebServer::DealRead_(HttpConn* client) {
+//     assert(client);
+//     ExtentTime_(client);
+//     threadpool_->AddTask(std::bind(&WebServer::OnRead_, this, client));
+// }
+
 void WebServer::AddClient_(int fd, sockaddr_in addr) {
     assert(fd > 0);
     users_[fd].init(fd, addr);
-    if(timeoutMS_ > 0) {
-        timer_->add(fd, timeoutMS_, std::bind(&WebServer::CloseConn_, this, &users_[fd]));
-    }
-    epoller_->AddFd(fd, EPOLLIN | connEvent_);
-    SetFdNonblock(fd);
+    /**
+     * 下面可以增加定时事件，即从 accept 中接收到 fd 后，如果
+     * 超过一定时间没处理就关闭连接。同样使用 iom_ 增加，这里
+     * 的定时时间可以绑定到每个fd事件上，然后这里增加定时事件
+     * 后就会将时间赋值到 iom_ 的定时器上。
+     */
+    // if(timeoutMS_ > 0) {
+    //     timer_->add(fd, timeoutMS_, std::bind(&WebServer::CloseConn_, this, &users_[fd]));
+    // }
+    assert(&users_[fd]);
+    iom_->addEvent(fd, IOManager::READ, std::bind(&WebServer::OnRead_, this, &users_[fd]));
+    //epoller_->AddFd(fd, EPOLLIN | connEvent_);
+    //SetFdNonblock(fd);
     LOG_INFO("Client[%d] in!", users_[fd].GetFd());
 }
 
@@ -149,27 +168,24 @@ void WebServer::DealListen_() {
     } while(listenEvent_ & EPOLLET);
     // 如果是 ET 模式，则需要一次性读完，不能等到下次处理，所以
     // 没读完要继续循环，不是 ET 模式没读完时可以下次读，不用循环。
-}
 
-// 处理读事件，主要逻辑是将OnRead加入线程池的任务队列中
-void WebServer::DealRead_(HttpConn* client) {
-    assert(client);
-    ExtentTime_(client);
-    threadpool_->AddTask(std::bind(&WebServer::OnRead_, this, client));
+    //listen 要持续的监听的，此次读出一些 newfd 后，下次还要继续监听，
+    //一直到服务器停止的，所以这里还要增加任务。
+    iom_->schedule(std::bind(&WebServer::DealListen_, this));  
 }
 
 // 处理写事件，主要逻辑是将OnWrite加入线程池的任务队列中
-void WebServer::DealWrite_(HttpConn* client) {
-    assert(client);
-    ExtentTime_(client);
-    threadpool_->AddTask(std::bind(&WebServer::OnWrite_, this, client));
-}
+// void WebServer::DealWrite_(HttpConn* client) {
+//     assert(client);
+//     ExtentTime_(client);
+//     threadpool_->AddTask(std::bind(&WebServer::OnWrite_, this, client));
+// }
 
 // 重新设置超时时间
-void WebServer::ExtentTime_(HttpConn* client) {
-    assert(client);
-    if(timeoutMS_ > 0) { timer_->adjust(client->GetFd(), timeoutMS_); }
-}
+// void WebServer::ExtentTime_(HttpConn* client) {
+//     assert(client);
+//     if(timeoutMS_ > 0) { timer_->adjust(client->GetFd(), timeoutMS_); }
+// }
 
 void WebServer::OnRead_(HttpConn* client) {
     assert(client);
@@ -196,11 +212,13 @@ void WebServer::OnProcess(HttpConn* client) {
         // 入到 httpconn 的写缓存区，所以这里需要将写缓存区的数据发送给
         // 客户端。所以这里增加相应的写事件，并将 OnWrite_ 加入线程池的任务队列中。
         // 要增加写事件，然后检测到写事件后，再调用 httpconn 的 write 写给 client。
-        epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);    
+        // epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);   
+        iom_->addEvent(client->GetFd(), IOManager::WRITE, std::bind(&WebServer::OnWrite_, this, client));
     } 
     else {
         // 处理请求失败，继续读取请求数据。
-        epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLIN);
+        // epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLIN);
+        iom_->addEvent(client->GetFd(), IOManager::READ, std::bind(&WebServer::OnRead_, this, client));
     }
 }
 
@@ -267,7 +285,6 @@ bool WebServer::InitSocket_() {
         return false;
     }
     ret = iom->addEvent(listenFd_, IOManager::READ, std::bind(&WebServer::DealListen_, this));
-    //ret = epoller_->AddFd(listenFd_,  listenEvent_ | EPOLLIN);  // 将监听套接字加入epoller
     if(ret) {
         LOG_ERROR("Add listen error!");
         close(listenFd_);
