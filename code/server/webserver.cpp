@@ -8,22 +8,18 @@ WebServer::WebServer(
             const  char* sqlPwd, const char* dbName, 
             int connPoolNum, int threadNum, bool openLog, 
             int logLevel, int logQueSize): 
-            port_(port), timeoutMS_(timeoutMS), timer_(new HeapTimer()), 
+            port_(port), timer_(new HeapTimer()), 
             threadpool_(new ThreadPool(threadNum)), epoller_(new Epoller()) {
 
     // 是否打开日志标志
     if(openLog) {
         Log::Instance()->init(logLevel, "./log", ".log", logQueSize);
         //if(isClose_) { LOG_ERROR("========== Server init error!=========="); }
-        else {
-            LOG_INFO("========== Server init ==========");
-            LOG_INFO("Listen Mode: %s, OpenConn Mode: %s",
-                            (listenEvent_ & EPOLLET ? "ET": "LT"),
-                            (connEvent_ & EPOLLET ? "ET": "LT"));
-            LOG_INFO("LogSys level: %d", logLevel);
-            LOG_INFO("srcDir: %s", HttpConn::srcDir);
-            LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", connPoolNum, threadNum);
-        }
+        LOG_INFO("========== Server init ==========");
+        LOG_INFO("Listen Mode: %s, OpenConn Mode: %s", (listenEvent_ & EPOLLET ? "ET": "LT"), (connEvent_ & EPOLLET ? "ET": "LT"));
+        LOG_INFO("LogSys level: %d", logLevel);
+        LOG_INFO("srcDir: %s", HttpConn::srcDir);
+        LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", connPoolNum, threadNum);
     }
 
     srcDir_ = getcwd(nullptr, 256);
@@ -36,7 +32,7 @@ WebServer::WebServer(
     SqlConnPool::Instance()->Init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);  // 连接池单例的初始化
 
     iom_ = new IOManager(threadNum + 1, false);
-    iom_->schedule(InitSocket_);
+    iom_->schedule(std::bind(&WebServer::InitSocket_, this));
 
     // 初始化事件和初始化socket(监听)
     InitEventMode_(trigMode);
@@ -123,6 +119,7 @@ void WebServer::CloseConn_(HttpConn* client) {
     assert(client);
     LOG_INFO("Client[%d] quit!", client->GetFd());
     epoller_->DelFd(client->GetFd());
+    // iom_->delEvent(client->GetFd(), client->GetEvents());
     client->Close();
 }
 
@@ -284,7 +281,7 @@ bool WebServer::InitSocket_() {
         close(listenFd_);
         return false;
     }
-    ret = iom->addEvent(listenFd_, IOManager::READ, std::bind(&WebServer::DealListen_, this));
+    ret = iom_->addEvent(listenFd_, IOManager::READ, std::bind(&WebServer::DealListen_, this));
     if(ret) {
         LOG_ERROR("Add listen error!");
         close(listenFd_);
