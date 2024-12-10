@@ -67,6 +67,7 @@ Scheduler::~Scheduler() {
 
 // 启动调度器，对调度器进行一些列的初始化（初始化线程池）。
 void Scheduler::start() {
+    LOG_INFO("start()");
     LOG_DEBUG("Scheduler::start %s", m_name.c_str());
     MutexType::Lock lock(m_mutex);
     if (m_stopping) {
@@ -83,6 +84,7 @@ void Scheduler::start() {
                                       m_name + "_" + std::to_string(i)));
         m_threadIds.push_back(m_threads[i]->getId());
     }
+    LOG_INFO("start() end");
 }
 
 bool Scheduler::stopping() {
@@ -182,11 +184,17 @@ void Scheduler::run() {
                 }
 
                 // 找到一个未指定线程，或是指定了当前线程的任务
-                assert(it->fiber || it->cb);
-                if (it->fiber) {
-                    // 如果是协程，则进去判断是否为 ready 状态。
-                    assert(it->fiber->getState() == Fiber::READY);
+                // assert(it->fiber || it->cb);
+                // if (it->fiber) {
+                //     // 如果是协程，则进去判断是否为 ready 状态。
+                //     assert(it->fiber->getState() == Fiber::READY);
+                // }
+
+                if(it->fiber && it->fiber->getState() == Fiber::RUNNING) {
+                    ++it;
+                    continue;
                 }
+
                 // 当前调度线程找到一个任务，准备开始调度，将其从任务队列中剔除，活动线程数加1
                 task = *it;// 将这个任务给 task
                 m_tasks.erase(it++);
@@ -228,11 +236,11 @@ void Scheduler::run() {
             cb_fiber.reset();
         } else {
             // 进到这个分支情况一定是任务队列空了，调度idle协程即可
-            if (idle_fiber->getState() == Fiber::TERM) {
-                // 如果 idle_fiber 已经终止了，说明调度器已经停止了，则退出循环。
-                LOG_DEBUG("Scheduler::run idle fiber term");
-                break;
-            }
+            // if (idle_fiber->getState() == Fiber::TERM) {
+            //     // 如果 idle_fiber 已经终止了，说明调度器已经停止了，则退出循环。
+            //     LOG_DEBUG("Scheduler::run idle fiber term");
+            //     break;
+            // }
             // 不是 TERM 状态的话，就会一直 resume 到 idle_fiber 协程，然后又在
             // idle_fiber 协程中又 yield 回来，所以这里不需要再次判断 idle_fiber 的状态。
             ++m_idleThreadCount;

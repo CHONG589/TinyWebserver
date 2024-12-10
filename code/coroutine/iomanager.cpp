@@ -118,6 +118,7 @@ IOManager::IOManager(size_t threads, bool use_caller, const std::string &name)
     contextResize(32);
     LOG_INFO("iom created");
 
+    LOG_INFO("init thread start");
     start();
 }
 
@@ -438,7 +439,10 @@ void IOManager::idle() {
                 if(errno == EINTR) {
                     continue;
                 }
-                LOG_ERROR("IOManager::idle, epoll_wait fd=%d, rt=%d, erro=%s", m_epfd, rt, strerror(errno));
+                //LOG_ERROR("IOManager::idle, epoll_wait fd=%d, rt=%d, erro=%s", m_epfd, rt, strerror(errno));
+                //break;
+            }
+            else {
                 break;
             }
         } while(true);

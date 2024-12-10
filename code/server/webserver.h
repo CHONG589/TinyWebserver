@@ -67,7 +67,7 @@ private:
    
     IOManager *iom_;
     std::unique_ptr<HeapTimer> timer_;
-    std::unique_ptr<ThreadPool> threadpool_;
+    //std::unique_ptr<ThreadPool> threadpool_;
     std::unique_ptr<Epoller> epoller_;
     // 作用：保存所有连接对象，key为fd，value为HttpConn对象。
     std::unordered_map<int, HttpConn> users_;

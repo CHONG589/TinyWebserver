@@ -8,22 +8,18 @@ WebServer::WebServer(
             const  char* sqlPwd, const char* dbName, 
             int connPoolNum, int threadNum, bool openLog, 
             int logLevel, int logQueSize): 
-            port_(port), timeoutMS_(timeoutMS), timer_(new HeapTimer()), 
-            threadpool_(new ThreadPool(threadNum)), epoller_(new Epoller()) {
+            port_(port), timer_(new HeapTimer()), 
+            epoller_(new Epoller()) {
 
     // 是否打开日志标志
     if(openLog) {
         Log::Instance()->init(logLevel, "./log", ".log", logQueSize);
         //if(isClose_) { LOG_ERROR("========== Server init error!=========="); }
-        else {
-            LOG_INFO("========== Server init ==========");
-            LOG_INFO("Listen Mode: %s, OpenConn Mode: %s",
-                            (listenEvent_ & EPOLLET ? "ET": "LT"),
-                            (connEvent_ & EPOLLET ? "ET": "LT"));
-            LOG_INFO("LogSys level: %d", logLevel);
-            LOG_INFO("srcDir: %s", HttpConn::srcDir);
-            LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", connPoolNum, threadNum);
-        }
+        LOG_INFO("========== Server init ==========");
+        LOG_INFO("Listen Mode: %s, OpenConn Mode: %s", (listenEvent_ & EPOLLET ? "ET": "LT"), (connEvent_ & EPOLLET ? "ET": "LT"));
+        LOG_INFO("LogSys level: %d", logLevel);
+        LOG_INFO("srcDir: %s", HttpConn::srcDir);
+        LOG_INFO("SqlConnPool num: %d, ThreadPool num: %d", connPoolNum, threadNum);
     }
 
     srcDir_ = getcwd(nullptr, 256);
@@ -35,11 +31,13 @@ WebServer::WebServer(
     // 初始化操作
     SqlConnPool::Instance()->Init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);  // 连接池单例的初始化
 
-    iom_ = new IOManager(threadNum + 1, false);
-    iom_->schedule(InitSocket_);
+    iom_ = new IOManager(threadNum, false);
+    //iom_->schedule(std::bind(&WebServer::InitSocket_, this));
+    InitSocket_();
 
     // 初始化事件和初始化socket(监听)
     InitEventMode_(trigMode);
+    LOG_INFO("========== Server init end ==========");
     // if(!InitSocket_()) { isClose_ = true;}
 }
 
@@ -123,6 +121,7 @@ void WebServer::CloseConn_(HttpConn* client) {
     assert(client);
     LOG_INFO("Client[%d] quit!", client->GetFd());
     epoller_->DelFd(client->GetFd());
+    // iom_->delEvent(client->GetFd(), client->GetEvents());
     client->Close();
 }
 
@@ -146,7 +145,7 @@ void WebServer::AddClient_(int fd, sockaddr_in addr) {
     //     timer_->add(fd, timeoutMS_, std::bind(&WebServer::CloseConn_, this, &users_[fd]));
     // }
     assert(&users_[fd]);
-    iom_->addEvent(fd, IOManager::READ, std::bind(&WebServer::OnRead_, this, &users_[fd]));
+    IOManager::GetThis()->addEvent(fd, IOManager::READ, std::bind(&WebServer::OnRead_, this, &users_[fd]));
     //epoller_->AddFd(fd, EPOLLIN | connEvent_);
     //SetFdNonblock(fd);
     LOG_INFO("Client[%d] in!", users_[fd].GetFd());
@@ -154,11 +153,12 @@ void WebServer::AddClient_(int fd, sockaddr_in addr) {
 
 // 处理监听套接字，主要逻辑是accept新的套接字，并加入timer和epoller中
 void WebServer::DealListen_() {
+    LOG_INFO("start deallisten...");
     struct sockaddr_in addr;
     socklen_t len = sizeof(addr);
     do {
         int fd = accept(listenFd_, (struct sockaddr *)&addr, &len);
-        if(fd <= 0) { return;}
+        if(fd <= 0) { break;}
         else if(HttpConn::userCount >= MAX_FD) {
             SendError_(fd, "Server busy!");
             LOG_WARN("Clients is full!");
@@ -171,7 +171,9 @@ void WebServer::DealListen_() {
 
     //listen 要持续的监听的，此次读出一些 newfd 后，下次还要继续监听，
     //一直到服务器停止的，所以这里还要增加任务。
-    iom_->schedule(std::bind(&WebServer::DealListen_, this));  
+    //iom_->schedule(std::bind(&WebServer::DealListen_, this));  
+    IOManager::GetThis()->addEvent(listenFd_, IOManager::READ, std::bind(&WebServer::DealListen_, this));
+    LOG_INFO("end deallisten...");
 }
 
 // 处理写事件，主要逻辑是将OnWrite加入线程池的任务队列中
@@ -188,6 +190,7 @@ void WebServer::DealListen_() {
 // }
 
 void WebServer::OnRead_(HttpConn* client) {
+    LOG_INFO("OnRead_ start...");
     assert(client);
     int ret = -1;
     int readErrno = 0;
@@ -199,6 +202,7 @@ void WebServer::OnRead_(HttpConn* client) {
     }
     // 业务逻辑的处理（先读后处理）
     OnProcess(client);
+    LOG_INFO("OnRead_ end...");
 }
 
 /* 处理读（请求）数据的函数 */
@@ -213,16 +217,17 @@ void WebServer::OnProcess(HttpConn* client) {
         // 客户端。所以这里增加相应的写事件，并将 OnWrite_ 加入线程池的任务队列中。
         // 要增加写事件，然后检测到写事件后，再调用 httpconn 的 write 写给 client。
         // epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);   
-        iom_->addEvent(client->GetFd(), IOManager::WRITE, std::bind(&WebServer::OnWrite_, this, client));
+        IOManager::GetThis()->addEvent(client->GetFd(), IOManager::WRITE, std::bind(&WebServer::OnWrite_, this, client));
     } 
     else {
         // 处理请求失败，继续读取请求数据。
         // epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLIN);
-        iom_->addEvent(client->GetFd(), IOManager::READ, std::bind(&WebServer::OnRead_, this, client));
+        IOManager::GetThis()->addEvent(client->GetFd(), IOManager::READ, std::bind(&WebServer::OnRead_, this, client));
     }
 }
 
 void WebServer::OnWrite_(HttpConn* client) {
+    LOG_INFO("OnWrite_ start...");
     assert(client);
     int ret = -1;
     int writeErrno = 0;
@@ -243,6 +248,7 @@ void WebServer::OnWrite_(HttpConn* client) {
         }
     }
     CloseConn_(client);
+    LOG_INFO("OnWrite_ end...");
 }
 
 /* Create listenFd */
@@ -252,6 +258,8 @@ bool WebServer::InitSocket_() {
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     addr.sin_port = htons(port_);
+
+    LOG_INFO("initsocket start...")
 
     listenFd_ = socket(AF_INET, SOCK_STREAM, 0);
     if(listenFd_ < 0) {
@@ -284,12 +292,13 @@ bool WebServer::InitSocket_() {
         close(listenFd_);
         return false;
     }
-    ret = iom->addEvent(listenFd_, IOManager::READ, std::bind(&WebServer::DealListen_, this));
-    if(ret) {
-        LOG_ERROR("Add listen error!");
-        close(listenFd_);
-        return false;
-    } 
+    //IOManager::GetThis()->addEvent(listenFd_, IOManager::READ, std::bind(&WebServer::DealListen_, this));
+    iom_->schedule(std::bind(&WebServer::DealListen_, this));
+    // if(ret) {
+    //     LOG_ERROR("Add listen error!");
+    //     close(listenFd_);
+    //     return false;
+    // } 
     LOG_INFO("Server port:%d", port_);
     return true;
 }
