@@ -75,7 +75,7 @@ Fiber::ptr Fiber::GetThis() {
     // 这里相当于调用了无参构造函数，创建了线程的主协程
     Fiber::ptr main_fiber(new Fiber);// 一创建协程对象就初始化好了，详见 Fiber()
     assert(t_fiber == main_fiber.get());
-    assert(t_fiber == main_fiber.get());
+    // assert(t_fiber == main_fiber.get());
     t_thread_fiber = main_fiber;
     return t_fiber->shared_from_this();
 }

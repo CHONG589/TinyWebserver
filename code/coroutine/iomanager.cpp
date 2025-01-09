@@ -440,7 +440,7 @@ void IOManager::idle() {
                     continue;
                 }
                 //LOG_ERROR("IOManager::idle, epoll_wait fd=%d, rt=%d, erro=%s", m_epfd, rt, strerror(errno));
-                //break;
+                break;
             }
             else {
                 break;
