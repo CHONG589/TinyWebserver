@@ -116,7 +116,7 @@ public:
     /**
      * @brief 不等于函数
      */
-    bool operator!=(cosnt Address &rhs) const;
+    bool operator!=(const Address &rhs) const;
 };
 
 /**
@@ -132,7 +132,7 @@ public:
      * @param[in] port 端口号
      * @return 调用成功返回IPAddress,失败返回nullptr
      */
-    static IPAddress::ptr Create(cosnt char *address, uint16_t port = 0);
+    static IPAddress::ptr Create(const char *address, uint16_t port = 0);
 
     /**
      * @brief 返回端口号
@@ -158,7 +158,7 @@ public:
      * @param[in] port 端口号
      * @return 返回IPv4Address,失败返回nullptr
      */
-    static IPv4Address::ptr Create(cosnt char *address, uint16_t port = 0);
+    static IPv4Address::ptr Create(const char *address, uint16_t port = 0);
 
     /**
      * @brief 构造函数，通过sockaddr_in构造IPv4Address
@@ -181,7 +181,7 @@ public:
     uint32_t getPort() const override;
     void setPort(uint16_t v) override;
 
-privatte:
+private:
     sockaddr_in m_addr;
 };
 
