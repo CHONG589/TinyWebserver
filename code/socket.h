@@ -44,38 +44,6 @@ public:
     };
 
     /**
-     * @brief 创建TCP Socket(满足地址类型)
-     * @param[in] address 地址
-     */
-    static Socket::ptr CreateTCP(zch::Address::ptr address);
-
-    /**
-     * @brief 创建UDP Socket(满足地址类型)
-     * @param[in] address 地址
-     */
-    static Socket::ptr CreateUDP(zch::Address::ptr address);
-
-    /**
-     * @brief 创建IPv4的TCP Socket
-     */
-    static Socket::ptr CreateTCPSocket();
-
-    /**
-     * @brief 创建IPv4的UDP Socket
-     */
-    static Socket::ptr CreateUDPSocket();
-
-    /**
-     * @brief 创建IPv6的TCP Socket
-     */
-    static Socket::ptr CreateTCPSocket6();
-
-    /**
-     * @brief 创建IPv6的UDP Socket
-     */
-    static Socket::ptr CreateUDPSocket6();
-
-    /**
      * @brief Socket构造函数
      * @param[in] family 协议簇
      * @param[in] type 类型
@@ -87,6 +55,38 @@ public:
      * @brief 析构函数
      */
     virtual ~Socket();
+
+    /**
+     * @brief 创建TCP Socket(根据传入的address中的地址簇创建)
+     * @param[in] address 地址
+     */
+    static Socket::ptr CreateTCP(zch::Address::ptr address);
+
+    /**
+     * @brief 创建UDP Socket(根据传入的address中的地址簇创建)
+     * @param[in] address 地址
+     */
+    static Socket::ptr CreateUDP(zch::Address::ptr address);
+
+    /**
+     * @brief 创建IPv4的TCP Socket(创建指定的地址簇类型的Socket)
+     */
+    static Socket::ptr CreateTCPSocket();
+
+    /**
+     * @brief 创建IPv4的UDP Socket(创建指定的地址簇类型的Socket)
+     */
+    static Socket::ptr CreateUDPSocket();
+
+    /**
+     * @brief 创建IPv6的TCP Socket(创建指定的地址簇类型的Socket)
+     */
+    static Socket::ptr CreateTCPSocket6();
+
+    /**
+     * @brief 创建IPv6的UDP Socket(创建指定的地址簇类型的Socket)
+     */
+    static Socket::ptr CreateUDPSocket6();
 
     /**
      * @brief 获取发送超时时间(毫秒)
@@ -345,7 +345,7 @@ public:
 
 protected:
     /**
-     * @brief 初始化socket
+     * @brief 对sock进行设置setoption
      */
     void initSock();
 
