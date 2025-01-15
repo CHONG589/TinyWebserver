@@ -1,5 +1,11 @@
-#ifndef __MUTEX_H__
-#define __MUTEX_H__
+/**
+ * @file mutex.h
+ * @brief 信号量，互斥锁，读写锁，范围锁模板，自旋锁，原子锁
+ * @author zch
+ * @date 2025-01-15
+ */
+#ifndef __ZCH_MUTEX_H__
+#define __ZCH_MUTEX_H__
 
 #include <thread>
 #include <functional>
@@ -11,6 +17,8 @@
 #include <list>
 
 #include "noncopyable.h"
+
+namespace zch {
 
 /**
  * @brief 信号量
@@ -421,4 +429,6 @@ private:
     volatile std::atomic_flag m_mutex;
 };
 
-#endif // __SYLAR_MUTEX_H__
+} // namespace zch
+
+#endif

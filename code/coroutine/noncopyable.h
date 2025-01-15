@@ -1,5 +1,13 @@
-#ifndef __NONCOPYABLE_H__
-#define __NONCOPYABLE_H__
+/**
+ * @file noncopyable.h
+ * @brief 不可拷贝对象封装
+ * @author zch
+ * @date 2025-01-15
+ */
+#ifndef __ZCH_NONCOPYABLE_H__
+#define __ZCH_NONCOPYABLE_H__
+
+namespace zch {
 
 /**
  * @brief 对象无法拷贝,赋值
@@ -26,5 +34,7 @@ public:
      */
     Noncopyable& operator=(const Noncopyable&) = delete;
 };
+
+}//namespace zch
 
 #endif

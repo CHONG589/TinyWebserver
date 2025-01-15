@@ -1,11 +1,15 @@
 /**
- * @file scheduler.cc
+ * @file scheduler.cpp
  * @brief 协程调度器实现
- * @version 0.1
- * @date 2021-06-15
+ * @author zch
+ * @date 2025-01-15
  */
+
 #include <assert.h>
 #include "scheduler.h"
+#include "hook.h"
+
+namespace zch {
 
 /// 当前线程的调度器，同一个调度器下的所有线程共享同一个实例
 static thread_local Scheduler *t_scheduler = nullptr;
@@ -21,7 +25,7 @@ Scheduler::Scheduler(size_t threads, bool use_caller, const std::string &name) {
     if (use_caller) {
         --threads;
         // 主线程的调度器，caller线程的主协程,用 GetThis()获取
-        Fiber::GetThis();// 获取主协程
+        zch::Fiber::GetThis();// 获取主协程
         assert(GetThis() == nullptr);
         t_scheduler = this;
 
@@ -32,9 +36,9 @@ Scheduler::Scheduler(size_t threads, bool use_caller, const std::string &name) {
         // 获取调度协程
         m_rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this), 0, false));
 
-        Thread::SetName(m_name);
+        sylar::Thread::SetName(m_name);
         t_scheduler_fiber = m_rootFiber.get();
-        m_rootThread      = Thread::GetThreadId();
+        m_rootThread      = zch::Thread::GetThreadId();
         // 将线程 id 加入到线程池。
         m_threadIds.push_back(m_rootThread);
     } else {
@@ -99,7 +103,7 @@ void Scheduler::tickle() {
 void Scheduler::idle() {
     LOG_DEBUG("Scheduler::idle...");
     while (!stopping()) {
-        Fiber::GetThis()->yield();
+        zch::Fiber::GetThis()->yield();
     }
 }
 
@@ -153,12 +157,15 @@ void Scheduler::stop() {
 
 void Scheduler::run() {
     LOG_DEBUG("Scheduler::run begin");
+
+    set_hook_enable(true);
+
     //运行到本调度器，设置当前线程的调度器。
     setThis();
-    if (Thread::GetThreadId() != m_rootThread) {
+    if (zch::Thread::GetThreadId() != m_rootThread) {
         // 非主线程的调度器，将当前线程的调度协程保存起来,
         // 以便在stop时，返回caller线程的主协程
-        t_scheduler_fiber = Fiber::GetThis().get();
+        t_scheduler_fiber = zch::Fiber::GetThis().get();
     }
 
     Fiber::ptr idle_fiber(new Fiber(std::bind(&Scheduler::idle, this)));
@@ -174,7 +181,7 @@ void Scheduler::run() {
             auto it = m_tasks.begin();
             // 遍历所有调度任务
             while (it != m_tasks.end()) {
-                if (it->thread != -1 && it->thread != Thread::GetThreadId()) {
+                if (it->thread != -1 && it->thread != zch::Thread::GetThreadId()) {
                     // 任务队列中的任务指定了调度线程，但不是当前线程，跳过这个任务，继续下一个,因为在初始化时
                     // 会指定哪个线程调度，如果 it->thread == -1，说明这个任务没有指定线程。这时也要通知其他
                     // 线程进行调度，直到那个线程来了与 GetThreadId() 相等。所以这里不跳过这个任务，而是继续下一个。
@@ -184,13 +191,13 @@ void Scheduler::run() {
                 }
 
                 // 找到一个未指定线程，或是指定了当前线程的任务
-                // assert(it->fiber || it->cb);
+                assert(it->fiber || it->cb);
                 // if (it->fiber) {
                 //     // 如果是协程，则进去判断是否为 ready 状态。
                 //     assert(it->fiber->getState() == Fiber::READY);
                 // }
 
-                if(it->fiber && it->fiber->getState() == Fiber::RUNNING) {
+                if(it->fiber && it->fiber->getState() == zch::Fiber::RUNNING) {
                     ++it;
                     continue;
                 }
@@ -219,13 +226,15 @@ void Scheduler::run() {
             task.fiber->resume();
             --m_activeThreadCount;
             task.reset();
-        } else if (task.cb) {
+        } 
+        else if (task.cb) {
             // task 为回调函数，则创建新的协程，执行回调函数
             if (cb_fiber) {
                 // 如果cb_fiber已经有协程了，说明上一个任务的回调函数还没执行完，则重新设置这个
                 // 协程的回调函数。只需将这个任务的相关信息设置到这个协程上即可。
                 cb_fiber->reset(task.cb);
-            } else {
+            } 
+            else {
                 // 如果协程没有被创建，则创建新的协程，并设置回调函数
                 cb_fiber.reset(new Fiber(task.cb));
             }
@@ -234,13 +243,14 @@ void Scheduler::run() {
             cb_fiber->resume();
             --m_activeThreadCount;
             cb_fiber.reset();
-        } else {
+        } 
+        else {
             // 进到这个分支情况一定是任务队列空了，调度idle协程即可
-            // if (idle_fiber->getState() == Fiber::TERM) {
-            //     // 如果 idle_fiber 已经终止了，说明调度器已经停止了，则退出循环。
-            //     LOG_DEBUG("Scheduler::run idle fiber term");
-            //     break;
-            // }
+            if (idle_fiber->getState() == Fiber::TERM) {
+                // 如果 idle_fiber 已经终止了，说明调度器已经停止了，则退出循环。
+                LOG_DEBUG("Scheduler::run idle fiber term");
+                break;
+            }
             // 不是 TERM 状态的话，就会一直 resume 到 idle_fiber 协程，然后又在
             // idle_fiber 协程中又 yield 回来，所以这里不需要再次判断 idle_fiber 的状态。
             ++m_idleThreadCount;
@@ -250,3 +260,5 @@ void Scheduler::run() {
     }
     LOG_DEBUG("Scheduler::run exit");
 }
+
+}// namespace zch

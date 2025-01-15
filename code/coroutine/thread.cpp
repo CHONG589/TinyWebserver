@@ -1,11 +1,14 @@
 /**
- * @file thread.cc
+ * @file thread.cpp
  * @brief 线程封装实现
- * @version 0.1
- * @date 2021-06-15
+ * @author zch
+ * @date 2025-01-15
  */
 #include "thread.h"
-#include "../log/log.h"
+#include "./log/log.h"
+#include "util.h"
+
+namespace zch {
 
 static thread_local Thread *t_thread          = nullptr;
 static thread_local std::string t_thread_name = "UNKNOW";
@@ -36,6 +39,7 @@ Thread::Thread(std::function<void()> cb, const std::string &name)
     }
     int rt = pthread_create(&m_thread, nullptr, &Thread::run, this);
     if (rt) {
+        LOG_ERROR("Thread::thread create fail!");
         throw std::logic_error("pthread_create error");
     }
     m_semaphore.wait();
@@ -51,6 +55,7 @@ void Thread::join() {
     if (m_thread) {
         int rt = pthread_join(m_thread, nullptr);
         if (rt) {
+            LOG_ERROR("Thread::thread join fail!");
             throw std::logic_error("pthread_join error");
         }
         m_thread = 0;
@@ -61,7 +66,7 @@ void *Thread::run(void *arg) {
     Thread *thread = (Thread *)arg;
     t_thread       = thread;
     t_thread_name  = thread->m_name;
-    thread->m_id   = GetThreadId();
+    thread->m_id   = zch::GetThreadId();
     pthread_setname_np(pthread_self(), thread->m_name.substr(0, 15).c_str());
 
     std::function<void()> cb;
@@ -72,3 +77,5 @@ void *Thread::run(void *arg) {
     cb();
     return 0;
 }
+
+} // namespace zch

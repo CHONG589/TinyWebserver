@@ -1,9 +1,18 @@
+/**
+ * @file iomanager.cpp
+ * @brief IO协程调度器
+ * @author zch
+ * @date 2025-01-15
+ */
+
 #include <unistd.h>    // for pipe()
 #include <assert.h>
 #include <sys/epoll.h> // for epoll_xxx()
 #include <fcntl.h>     // for fcntl()
 #include "iomanager.h"
 #include "../log/log.h"
+
+namespace zch {
 
 enum EpollCtlOp {
 };
@@ -136,15 +145,6 @@ IOManager::~IOManager() {
     LOG_INFO("iom destroyed");
 }
 
-bool IOManager::stopping(uint64_t& timeout) {
-    ///根据返回的下一个定时器任务需要多久执行来判断是否有定时器任务。
-    //~0ull表示无任务
-    timeout = getNextTimer();
-    return timeout == ~0ull
-        && m_pendingEventCount == 0
-        && Scheduler::stopping();
-}
-
 void IOManager::contextResize(size_t size) {
     m_fdContexts.resize(size);
 
@@ -154,14 +154,6 @@ void IOManager::contextResize(size_t size) {
             m_fdContexts[i]->fd = i;
         }
     }
-}
-
-int IOManager::setnonblocking(int fd) {
-    //返回给定文件描述符 fd 的文件状态标志。这些标志通常用于描述文件的打开方式（例如只读、只写、读写等）以及其他特性（例如非阻塞模式）
-    int old_option = fcntl(fd, F_GETFL);
-    int new_option = old_option | O_NONBLOCK;
-    fcntl(fd, F_SETFL, new_option);
-    return old_option;
 }
 
 int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
@@ -202,7 +194,6 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
         LOG_ERROR("IOManager::addEvent epoll_ctl add event False, fd=%d", fd);
         return -1;
     }
-    setnonblocking(fd);
 
     // 待执行IO事件数加1
     ++m_pendingEventCount;
@@ -218,11 +209,11 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
     // event_ctx为事件event的上下文，里面包括了执行函数等信息。下面是为它的上下文
     // 赋值。
     // 赋值scheduler和回调函数，如果回调函数为空，则把当前协程当成回调执行体
-    event_ctx.scheduler = Scheduler::GetThis();
+    event_ctx.scheduler = zch::Scheduler::GetThis();
     if (cb) {
         event_ctx.cb.swap(cb);
     } else {
-        event_ctx.fiber = Fiber::GetThis();
+        event_ctx.fiber = zch::Fiber::GetThis();
         assert(event_ctx.fiber->getState() == Fiber::RUNNING);
     }
     LOG_INFO("Add event fd= %d", fd);
@@ -346,7 +337,7 @@ bool IOManager::cancelAll(int fd) {
 IOManager *IOManager::GetThis() {
     //dynamic_cast用于基类向派生类转换，本来基类向派生类转换是不安全的，
     //所以这里使用了dynamic_cast
-    return dynamic_cast<IOManager *>(Scheduler::GetThis());
+    return dynamic_cast<IOManager *>(zch::Scheduler::GetThis());
 }
 
 /**
@@ -386,10 +377,17 @@ void IOManager::tickle() {
 }
 
 bool IOManager::stopping() {
-    // 对于IOManager而言，必须等所有待调度的IO事件都执行完了才可以退出
-    // 这里是使用了Scheduler::stoppint，而不是 IOManager::stopping,
-    // 这里是要确定调度器也已经停止。
-    return m_pendingEventCount == 0 && Scheduler::stopping();
+    uint64_t timeout = 0;
+    return stopping(timeout);
+}
+
+bool IOManager::stopping(uint64_t &timeout) {
+    ///根据返回的下一个定时器任务需要多久执行来判断是否有定时器任务。
+    //~0ull表示无任务
+    timeout = getNextTimer();
+    return timeout == ~0ull
+        && m_pendingEventCount == 0
+        && Scheduler::stopping();
 }
 
 /**
@@ -434,14 +432,10 @@ void IOManager::idle() {
             } else {
                 next_timeout = MAX_TIMEOUT;
             }
-            int rt = epoll_wait(m_epfd, events, MAX_EVNETS, MAX_TIMEOUT);
-            if(rt < 0) {
-                if(errno == EINTR) {
-                    continue;
-                }
-                //LOG_ERROR("IOManager::idle, epoll_wait fd=%d, rt=%d, erro=%s", m_epfd, rt, strerror(errno));
-                break;
-            }
+            rt = epoll_wait(m_epfd, events, MAX_EVNETS, MAX_TIMEOUT);
+            if(rt < 0 && errno == EINTR) {
+                continue;
+            } 
             else {
                 break;
             }
@@ -530,7 +524,7 @@ void IOManager::idle() {
         } // end for
 
         //获取当前正在执行的协程
-        Fiber::ptr cur = Fiber::GetThis();
+        Fiber::ptr cur = zch::Fiber::GetThis();
         //cur为一个共享指针，这里需要一个指针，所以用get()获取原始指针，
         //然后reset()将其置空，这样cur就不再指向当前协程了。这要就不会
         //增加引用计数了吧？因为刚刚增加了1，现在又将它销毁，即减一，而
@@ -559,3 +553,5 @@ void IOManager::idle() {
 void IOManager::onTimerInsertedAtFront() {
     tickle();
 }
+
+}// namespace zch

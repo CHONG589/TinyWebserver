@@ -1,10 +1,19 @@
-#ifndef __TIMER_H__
-#define __TIMER_H__
+/**
+ * @file timer.h
+ * @brief 定时器封装
+ * @author zch
+ * @date 2025-01-15
+ */
+
+#ifndef __ZCH_TIMER_H__
+#define __ZCH_TIMER_H__
 
 #include <memory>
 #include <vector>
 #include <set>
 #include "mutex.h"
+
+namespace zch {
 
 class TimerManager;
 /**
@@ -150,11 +159,7 @@ private:
      * @brief 检测服务器时间是否被调后了
      */
     bool detectClockRollover(uint64_t now_ms);
-    static uint64_t GetElapsed() {
-        struct timespec ts = {0};
-        clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-        return ts.tv_sec * 1000 + ts.tv_nsec / 1000000.0;
-    }
+    
 private:
     /// Mutex
     RWMutexType m_mutex;
@@ -170,5 +175,7 @@ private:
     /// 上次执行时间
     uint64_t m_previouseTime = 0;
 };
+
+}//namespace zch
 
 #endif

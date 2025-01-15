@@ -7,13 +7,15 @@
 // ~all~top_positive~default-1-139480927-null-null.142%5Ev100%5Econtro
 // l&utm_term=%E5%8D%8F%E7%A8%8B&spm=1018.2226.3001.4187
 
-#ifndef __FIBER_H__
-#define __FIBER_H__
+#ifndef __ZCH_FIBER_H__
+#define __ZCH_FIBER_H__
 
 #include <functional>
 #include <memory>
 #include <ucontext.h>
 #include "thread.h"
+
+namespace zch {
 
 /**
  * @brief 协程类
@@ -135,5 +137,7 @@ private:
     /// 本协程是否参与调度器调度
     bool m_runInScheduler;
 };
+
+}//namespace zch
 
 #endif

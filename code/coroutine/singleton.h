@@ -1,7 +1,17 @@
-#ifndef __SINGLETON_H__
-#define __SINGLETON_H__
+/**
+ * @file singleton.h
+ * @brief 单例模式封装
+ * @author zch
+ * @date 2025-01-15
+ */
+#ifndef __SYLAR_SINGLETON_H__
+#define __SYLAR_SINGLETON_H__
 
 #include <memory>
+
+namespace zch {
+
+namespace {
 
 template<class T, class X, int N>
 T& GetInstanceX() {
@@ -13,6 +23,8 @@ template<class T, class X, int N>
 std::shared_ptr<T> GetInstancePtr() {
     static std::shared_ptr<T> v(new T);
     return v;
+}
+
 }
 
 /**
@@ -52,5 +64,7 @@ public:
         //return GetInstancePtr<T, X, N>();
     }
 };
+
+}//namespace zch
 
 #endif

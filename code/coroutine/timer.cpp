@@ -1,4 +1,14 @@
+/**
+ * @file timer.cpp
+ * @brief 定时器封装
+ * @author zch
+ * @date 2025-01-15
+ */
+
 #include "timer.h"
+#include "util.h"
+
+namespace zch {
 
 bool Timer::Comparator::operator()(const Timer::ptr& lhs
                         ,const Timer::ptr& rhs) const {
@@ -27,7 +37,7 @@ Timer::Timer(uint64_t ms, std::function<void()> cb,
     ,m_ms(ms)
     ,m_cb(cb)
     ,m_manager(manager) {
-    m_next = TimerManager::GetElapsed() + m_ms;
+    m_next = zch::GetElapsed() + m_ms;
 }
 
 Timer::Timer(uint64_t next)
@@ -57,7 +67,7 @@ bool Timer::refresh() {
     }
     m_manager->m_timers.erase(it);
     //删除要刷新的节点后，设置好时间后重新插入到小根堆中
-    m_next = TimerManager::GetElapsed() + m_ms;
+    m_next = zch::GetElapsedMS() + m_ms;
     m_manager->m_timers.insert(shared_from_this());
     return true;
 }
@@ -77,7 +87,7 @@ bool Timer::reset(uint64_t ms, bool from_now) {
     m_manager->m_timers.erase(it);
     uint64_t start = 0;
     if(from_now) {
-        start = TimerManager::GetElapsed();
+        start = zch::GetElapsed();
     } else {
         //这里可能是因为有一个构造函数是直接以最终执行时间
         //m_next 为参数直接构造的，所以这里需要判断是否是
@@ -93,7 +103,7 @@ bool Timer::reset(uint64_t ms, bool from_now) {
 }
 
 TimerManager::TimerManager() {
-    m_previouseTime = GetElapsed();
+    m_previouseTime = zch::GetElapsedMS();
 }
 
 TimerManager::~TimerManager() {
@@ -128,7 +138,7 @@ uint64_t TimerManager::getNextTimer() {
     }
 
     const Timer::ptr& next = *m_timers.begin();
-    uint64_t now_ms = TimerManager::GetElapsed();
+    uint64_t now_ms = zch::GetElapsedMS();
     if(now_ms >= next->m_next) {
         return 0;
     } else {
@@ -137,7 +147,7 @@ uint64_t TimerManager::getNextTimer() {
 }
 
 void TimerManager::listExpiredCb(std::vector<std::function<void()> >& cbs) {
-    uint64_t now_ms = TimerManager::GetElapsed();
+    uint64_t now_ms = zch::GetElapsedMS();
     std::vector<Timer::ptr> expired;
     {
         RWMutexType::ReadLock lock(m_mutex);
@@ -225,3 +235,5 @@ bool TimerManager::hasTimer() {
     RWMutexType::ReadLock lock(m_mutex);
     return !m_timers.empty();
 }
+
+}//namespace zch

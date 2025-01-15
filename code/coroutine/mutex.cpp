@@ -1,4 +1,13 @@
+/**
+ * @file mutex.cpp
+ * @brief 信号量实现
+ * @author zch
+ * @date 2025-01-15
+ */
+
 #include "mutex.h"
+
+namespace zch {
 
 Semaphore::Semaphore(uint32_t count) {
     if(sem_init(&m_semaphore, 0, count)) {
@@ -21,3 +30,5 @@ void Semaphore::notify() {
         throw std::logic_error("sem_post error");
     }
 }
+
+} // namespace zch

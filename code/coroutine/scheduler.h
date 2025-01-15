@@ -1,5 +1,12 @@
-#ifndef __SCHEDULER_H__
-#define __SCHEDULER_H__
+/**
+ * @file scheduler.h
+ * @brief 协程调度器实现
+ * @author zch
+ * @date 2025-01-15
+ */
+
+#ifndef __ZCH_SCHEDULER_H__
+#define __ZCH_SCHEDULER_H__
 
 #include <functional>
 #include <list>
@@ -8,6 +15,8 @@
 #include "fiber.h"
 #include "../log/log.h"
 #include "thread.h"
+
+namespace zch {
 
 /**
  * @brief 协程调度器
@@ -187,5 +196,7 @@ private:
     /// 是否正在停止
     bool m_stopping = false;
 };
+
+}// namespace zch
 
 #endif

@@ -1,8 +1,17 @@
-#ifndef __IOMANAGER_H__
-#define __IOMANAGER_H__
+/**
+ * @file iomanager.h
+ * @brief IO协程调度器
+ * @author zch
+ * @date 2025-01-15
+ */
+
+#ifndef __ZCH_IOMANAGER_H__
+#define __ZCH_IOMANAGER_H__
 
 #include "scheduler.h"
 #include "timer.h"
+
+namespace zch {
 
 class IOManager : public Scheduler, public TimerManager {
 public:
@@ -133,8 +142,6 @@ public:
      */
     static IOManager *GetThis();
 
-    int setnonblocking(int fd);
-
 protected:
     /**
      * @brief 通知调度器有任务要调度
@@ -188,5 +195,7 @@ private:
     /// socket事件上下文的容器
     std::vector<FdContext *> m_fdContexts;
 };
+
+}// namespace zch
 
 #endif

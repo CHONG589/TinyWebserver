@@ -4,7 +4,8 @@
  * @date 2025-01-11
  */
 
-#pragma once
+#ifndef __ZCH_ADDRESS_H__
+#define __ZCH_ADDRESS_H__
 
 #include <memory>
 #include <string>
@@ -234,3 +235,5 @@ private:
 std::ostream &operator<<(std::ostream &os, const Address &addr);
 
 }// namespace zch
+
+#endif

@@ -10,6 +10,9 @@
 #include "fiber.h"
 #include "../log/log.h"
 #include "scheduler.h"
+#include "config.h"
+
+namespace zch {
 
 /// 全局静态变量，用于生成协程id
 static std::atomic<uint64_t> s_fiber_id{0};
@@ -21,8 +24,12 @@ static thread_local Fiber *t_fiber = nullptr;
 /// 线程局部变量，当前线程的主协程，切换到这个协程，就相当于切换到了主线程中运行，智能指针形式
 static thread_local Fiber::ptr t_thread_fiber = nullptr;
 
-//协程栈默认大小 128k
-static uint32_t fiber_stack_size = 128 * 1024;
+// //协程栈默认大小 128k
+// static uint32_t fiber_stack_size = 128 * 1024;
+
+//协程栈大小，可通过配置文件获取，默认128k
+static ConfigVar<uint32_t>::ptr g_fiber_stack_size =
+    Config::Lookup<uint32_t>("fiber.stack_size", 128 * 1024, "fiber stack size");
 
 /**
  * @brief malloc栈内存分配器
@@ -51,6 +58,7 @@ Fiber::Fiber() {
 
     if (getcontext(&m_ctx)) {// 获取主协程的上下文
         //SYLAR_ASSERT2(false, "getcontext");
+        LOG_ERROR("Fiber getcontext wrong");
     }
 
     ++s_fiber_count;
@@ -75,7 +83,6 @@ Fiber::ptr Fiber::GetThis() {
     // 这里相当于调用了无参构造函数，创建了线程的主协程
     Fiber::ptr main_fiber(new Fiber);// 一创建协程对象就初始化好了，详见 Fiber()
     assert(t_fiber == main_fiber.get());
-    // assert(t_fiber == main_fiber.get());
     t_thread_fiber = main_fiber;
     return t_fiber->shared_from_this();
 }
@@ -92,7 +99,7 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool run_in_scheduler)
     m_stack     = StackAllocator::Alloc(m_stacksize);
 
     if (getcontext(&m_ctx)) {
-        //LOG_ERROR("%llu Fiber getcontext wrong", s_fiber_id);
+        LOG_ERROR("Fiber getcontext wrong");
     }
 
     m_ctx.uc_link          = nullptr;
@@ -113,6 +120,7 @@ Fiber::~Fiber() {
     if (m_stack) {
         // 有栈，说明是子协程，需要确保子协程一定是结束状态
         if (m_state != TERM) {
+            assert(m_state == TERM);
             LOG_ERROR("fiber %llu no term state, no destroy", m_id);
         }
         StackAllocator::Dealloc(m_stack, m_stacksize);
@@ -133,11 +141,11 @@ Fiber::~Fiber() {
  * 但其实刚创建好但没执行过的协程也应该允许重置的
  */
 void Fiber::reset(std::function<void()> cb) {
-    if (!m_stack) LOG_ERROR("fiber %llu reset no stack", m_id);
-    if (m_state != TERM) LOG_ERROR("fiber %llu reset fiber not term", m_id);
+    assert(m_stack);
+    assert(m_state == TERM);
     m_cb = cb;
     if (getcontext(&m_ctx)) {
-        //LOG_ERROR("%llu Fiber getcontext wrong", s_fiber_id);
+        LOG_ERROR("Fiber reset getcontext wrong");
     }
 
     m_ctx.uc_link          = nullptr;
@@ -212,3 +220,5 @@ void Fiber::MainFunc() {
     cur.reset();
     raw_ptr->yield();
 }
+
+}//namespace zch

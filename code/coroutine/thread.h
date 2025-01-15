@@ -1,10 +1,16 @@
-#ifndef __THREAD_H__
-#define __THREAD_H__
+/**
+ * @file thread.h
+ * @brief 线程相关的封装
+ * @author zch
+ * @date 2025-01-15
+ */
 
-#include <unistd.h>
-#include <sys/syscall.h>
+#ifndef __ZCH_THREAD_H__
+#define __ZCH_THREAD_H__
+
 #include "mutex.h"
-#include "noncopyable.h"
+
+namespace zch {
 
 /**
  * @brief 线程类
@@ -57,8 +63,6 @@ public:
      */
     static void SetName(const std::string &name);
 
-    static pid_t GetThreadId() { return syscall(SYS_gettid); }
-
 private:
     /**
      * @brief 线程执行函数
@@ -77,5 +81,7 @@ private:
     /// 信号量
     Semaphore m_semaphore;
 };
+
+} // namespace zch
 
 #endif
