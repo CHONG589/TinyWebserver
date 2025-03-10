@@ -37,7 +37,7 @@ Timer::Timer(uint64_t ms, std::function<void()> cb,
     ,m_ms(ms)
     ,m_cb(cb)
     ,m_manager(manager) {
-    m_next = zch::GetElapsed() + m_ms;
+    m_next = zch::GetElapsedMS() + m_ms;
 }
 
 Timer::Timer(uint64_t next)
@@ -87,7 +87,7 @@ bool Timer::reset(uint64_t ms, bool from_now) {
     m_manager->m_timers.erase(it);
     uint64_t start = 0;
     if(from_now) {
-        start = zch::GetElapsed();
+        start = zch::GetElapsedMS();
     } else {
         //这里可能是因为有一个构造函数是直接以最终执行时间
         //m_next 为参数直接构造的，所以这里需要判断是否是

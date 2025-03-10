@@ -442,14 +442,14 @@ void IOManager::idle() {
         } while(true);
 
         // 收集所有已超时的定时器，执行回调函数
-        std::vector<std::function<void()>> cbs;
-        listExpiredCb(cbs);
-        if(!cbs.empty()) {
-            for(const auto &cb : cbs) {
-                schedule(cb);
-            }
-            cbs.clear();
-        }
+        // std::vector<std::function<void()>> cbs;
+        // listExpiredCb(cbs);
+        // if(!cbs.empty()) {
+        //     for(const auto &cb : cbs) {
+        //         schedule(cb);
+        //     }
+        //     cbs.clear();
+        // }
 
         // 遍历所有发生的事件，根据epoll_event的私有指针找到对应的FdContext，进行事件处理
         for (int i = 0; i < rt; ++i) {

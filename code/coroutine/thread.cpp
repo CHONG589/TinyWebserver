@@ -5,7 +5,7 @@
  * @date 2025-01-15
  */
 #include "thread.h"
-#include "./log/log.h"
+#include "../log/log.h"
 #include "util.h"
 
 namespace zch {

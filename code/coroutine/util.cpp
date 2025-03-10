@@ -15,7 +15,7 @@
 #include <cxxabi.h>   // for abi::__cxa_demangle()
 #include <algorithm>  // for std::transform()
 #include "util.h"
-#include "./log/log.h
+#include "../log/log.h"
 #include "fiber.h"
 
 namespace zch {

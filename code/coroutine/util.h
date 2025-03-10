@@ -30,3 +30,5 @@ pid_t GetThreadId();
 uint64_t GetElapsedMS();
 
 }//namespace zch
+
+#endif

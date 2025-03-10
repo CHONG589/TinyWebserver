@@ -10,7 +10,7 @@
 #include "fiber.h"
 #include "../log/log.h"
 #include "scheduler.h"
-#include "config.h"
+// #include "config.h"
 
 namespace zch {
 
@@ -25,11 +25,11 @@ static thread_local Fiber *t_fiber = nullptr;
 static thread_local Fiber::ptr t_thread_fiber = nullptr;
 
 // //协程栈默认大小 128k
-// static uint32_t fiber_stack_size = 128 * 1024;
+static uint32_t fiber_stack_size = 128 * 1024;
 
 //协程栈大小，可通过配置文件获取，默认128k
-static ConfigVar<uint32_t>::ptr g_fiber_stack_size =
-    Config::Lookup<uint32_t>("fiber.stack_size", 128 * 1024, "fiber stack size");
+// static ConfigVar<uint32_t>::ptr g_fiber_stack_size =
+//     Config::Lookup<uint32_t>("fiber.stack_size", 128 * 1024, "fiber stack size");
 
 /**
  * @brief malloc栈内存分配器

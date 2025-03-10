@@ -31,12 +31,12 @@ WebServer::WebServer(
     // 初始化操作
     SqlConnPool::Instance()->Init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);  // 连接池单例的初始化
 
-    iom_ = new IOManager(threadNum, false);
+    iom_ = new zch::IOManager(threadNum, false);
     //iom_->schedule(std::bind(&WebServer::InitSocket_, this));
     InitSocket_();
 
     // 初始化事件和初始化socket(监听)
-    InitEventMode_(trigMode);
+    //InitEventMode_(trigMode);
     LOG_INFO("========== Server init end ==========");
     // if(!InitSocket_()) { isClose_ = true;}
 }
@@ -145,7 +145,7 @@ void WebServer::AddClient_(int fd, sockaddr_in addr) {
     //     timer_->add(fd, timeoutMS_, std::bind(&WebServer::CloseConn_, this, &users_[fd]));
     // }
     assert(&users_[fd]);
-    IOManager::GetThis()->addEvent(fd, IOManager::READ, std::bind(&WebServer::OnRead_, this, &users_[fd]));
+    iom_->addEvent(fd, zch::IOManager::READ, std::bind(&WebServer::OnRead_, this, &users_[fd]));
     //epoller_->AddFd(fd, EPOLLIN | connEvent_);
     //SetFdNonblock(fd);
     LOG_INFO("Client[%d] in!", users_[fd].GetFd());
@@ -154,25 +154,21 @@ void WebServer::AddClient_(int fd, sockaddr_in addr) {
 // 处理监听套接字，主要逻辑是accept新的套接字，并加入timer和epoller中
 void WebServer::DealListen_() {
     LOG_INFO("start deallisten...");
-    struct sockaddr_in addr;
-    socklen_t len = sizeof(addr);
-    do {
+    
+    while(true) {
+        struct sockaddr_in addr;
+        socklen_t len = sizeof(addr);
         int fd = accept(listenFd_, (struct sockaddr *)&addr, &len);
-        if(fd <= 0) { break;}
+        if(fd <= 0) break;
         else if(HttpConn::userCount >= MAX_FD) {
             SendError_(fd, "Server busy!");
             LOG_WARN("Clients is full!");
             return;
         }
         AddClient_(fd, addr);
-    } while(listenEvent_ & EPOLLET);
-    // 如果是 ET 模式，则需要一次性读完，不能等到下次处理，所以
-    // 没读完要继续循环，不是 ET 模式没读完时可以下次读，不用循环。
+    }
 
-    //listen 要持续的监听的，此次读出一些 newfd 后，下次还要继续监听，
-    //一直到服务器停止的，所以这里还要增加任务。
     //iom_->schedule(std::bind(&WebServer::DealListen_, this));  
-    IOManager::GetThis()->addEvent(listenFd_, IOManager::READ, std::bind(&WebServer::DealListen_, this));
     LOG_INFO("end deallisten...");
 }
 
@@ -217,12 +213,12 @@ void WebServer::OnProcess(HttpConn* client) {
         // 客户端。所以这里增加相应的写事件，并将 OnWrite_ 加入线程池的任务队列中。
         // 要增加写事件，然后检测到写事件后，再调用 httpconn 的 write 写给 client。
         // epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);   
-        IOManager::GetThis()->addEvent(client->GetFd(), IOManager::WRITE, std::bind(&WebServer::OnWrite_, this, client));
+        iom_->addEvent(client->GetFd(), zch::IOManager::WRITE, std::bind(&WebServer::OnWrite_, this, client));
     } 
     else {
         // 处理请求失败，继续读取请求数据。
         // epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLIN);
-        IOManager::GetThis()->addEvent(client->GetFd(), IOManager::READ, std::bind(&WebServer::OnRead_, this, client));
+        iom_->addEvent(client->GetFd(), zch::IOManager::READ, std::bind(&WebServer::OnRead_, this, client));
     }
 }
 
@@ -236,14 +232,16 @@ void WebServer::OnWrite_(HttpConn* client) {
         /* 传输完成 */
         if(client->IsKeepAlive()) {
             // 保持连接，继续监测读事件
-            epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLIN); 
+            iom_->addEvent(client->GetFd(), zch::IOManager::READ, std::bind(&WebServer::OnRead_, this, client));
+            //epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLIN); 
             return;
         }
     }
     else if(ret < 0) {
         if(writeErrno == EAGAIN) { 
             // 缓冲区满了，继续传输，设置写事件。
-            epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);
+            // epoller_->ModFd(client->GetFd(), connEvent_ | EPOLLOUT);
+            iom_->addEvent(client->GetFd(), zch::IOManager::WRITE, std::bind(&WebServer::OnWrite_, this, client));
             return;
         }
     }

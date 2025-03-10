@@ -7,7 +7,8 @@
 
 #include <assert.h>
 #include "scheduler.h"
-#include "hook.h"
+#include "util.h"
+// #include "hook.h"
 
 namespace zch {
 
@@ -36,9 +37,9 @@ Scheduler::Scheduler(size_t threads, bool use_caller, const std::string &name) {
         // 获取调度协程
         m_rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this), 0, false));
 
-        sylar::Thread::SetName(m_name);
+        zch::Thread::SetName(m_name);
         t_scheduler_fiber = m_rootFiber.get();
-        m_rootThread      = zch::Thread::GetThreadId();
+        m_rootThread      = zch::GetThreadId();
         // 将线程 id 加入到线程池。
         m_threadIds.push_back(m_rootThread);
     } else {
@@ -158,11 +159,11 @@ void Scheduler::stop() {
 void Scheduler::run() {
     LOG_DEBUG("Scheduler::run begin");
 
-    set_hook_enable(true);
+    // set_hook_enable(true);
 
     //运行到本调度器，设置当前线程的调度器。
     setThis();
-    if (zch::Thread::GetThreadId() != m_rootThread) {
+    if (zch::GetThreadId() != m_rootThread) {
         // 非主线程的调度器，将当前线程的调度协程保存起来,
         // 以便在stop时，返回caller线程的主协程
         t_scheduler_fiber = zch::Fiber::GetThis().get();
@@ -181,7 +182,7 @@ void Scheduler::run() {
             auto it = m_tasks.begin();
             // 遍历所有调度任务
             while (it != m_tasks.end()) {
-                if (it->thread != -1 && it->thread != zch::Thread::GetThreadId()) {
+                if (it->thread != -1 && it->thread != zch::GetThreadId()) {
                     // 任务队列中的任务指定了调度线程，但不是当前线程，跳过这个任务，继续下一个,因为在初始化时
                     // 会指定哪个线程调度，如果 it->thread == -1，说明这个任务没有指定线程。这时也要通知其他
                     // 线程进行调度，直到那个线程来了与 GetThreadId() 相等。所以这里不跳过这个任务，而是继续下一个。
