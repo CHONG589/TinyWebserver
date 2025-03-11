@@ -7,10 +7,14 @@ WebServer::WebServer(
             int sqlPort, const char* sqlUser, 
             const  char* sqlPwd, const char* dbName, 
             int connPoolNum, int threadNum, bool openLog, 
-            int logLevel, int logQueSize): 
-            port_(port), timeoutMS_(timeoutMS), isClose_(false),
-            timer_(new HeapTimer()), 
-            threadpool_(new ThreadPool(threadNum)), epoller_(new Epoller()) {
+            int logLevel, int logQueSize)
+
+    : port_(port)
+    , timeoutMS_(timeoutMS)
+    , isClose_(false)
+    , timer_(new HeapTimer())
+    , threadpool_(new ThreadPool(threadNum))
+    , epoller_(new Epoller()) {
 
     // 是否打开日志标志
     if(openLog) {
@@ -30,11 +34,15 @@ WebServer::WebServer(
     srcDir_ = getcwd(nullptr, 256);
     assert(srcDir_);
     strcat(srcDir_, "/resources/");
+
+    //HttpConn的静态变量，要类外初始化
     HttpConn::userCount = 0;
     HttpConn::srcDir = srcDir_;
 
     // 初始化操作
-    SqlConnPool::Instance()->Init("localhost", sqlPort, sqlUser, sqlPwd, dbName, connPoolNum);  // 连接池单例的初始化
+    // 连接池单例的初始化
+    SqlConnPool::Instance()->Init("localhost", sqlPort, sqlUser, 
+                                    sqlPwd, dbName, connPoolNum);  
     // 初始化事件和初始化socket(监听)
     InitEventMode_(trigMode);
     if(!InitSocket_()) { isClose_ = true;}
@@ -85,7 +93,9 @@ void WebServer::Start() {
             /* 处理事件 */
             int fd = epoller_->GetEventFd(i);
             uint32_t events = epoller_->GetEvents(i);
+
             if(fd == listenFd_) {
+                //处理新到的客户连接
                 DealListen_();
             }
             else if(events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
@@ -154,6 +164,7 @@ void WebServer::DealListen_() {
 // 处理读事件，主要逻辑是将OnRead加入线程池的任务队列中
 void WebServer::DealRead_(HttpConn* client) {
     assert(client);
+    //因为这时要增加读事件了，要给相应的超时时间
     ExtentTime_(client);
     threadpool_->AddTask(std::bind(&WebServer::OnRead_, this, client));
 }
@@ -175,7 +186,7 @@ void WebServer::OnRead_(HttpConn* client) {
     assert(client);
     int ret = -1;
     int readErrno = 0;
-    // 读取客户端套接字的数据，读到httpconn的读缓存区
+    // 读取客户端套接字的数据，读到自己的httpconn读缓存区
     ret = client->read(&readErrno);         
     if(ret <= 0 && readErrno != EAGAIN) {   // 读异常就关闭客户端
         CloseConn_(client);
@@ -266,7 +277,9 @@ bool WebServer::InitSocket_() {
         close(listenFd_);
         return false;
     }
-    ret = epoller_->AddFd(listenFd_,  listenEvent_ | EPOLLIN);  // 将监听套接字加入epoller
+    //监听 listenFd_ 事件，如果在 assept 中返回了，即有事件发生
+    //就通知。
+    ret = epoller_->AddFd(listenFd_, listenEvent_ | EPOLLIN);
     if(ret == 0) {
         LOG_ERROR("Add listen error!");
         close(listenFd_);
