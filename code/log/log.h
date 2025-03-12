@@ -32,9 +32,11 @@ public:
                 int maxQueueCapacity = 1024);
 
     static Log* Instance();
-    static void FlushLogThread();   // 异步写日志公有方法，调用私有方法asyncWrite
+    // 异步写日志公有方法，调用私有方法asyncWrite
+    static void FlushLogThread();   
     
-    void write(int level, const char *format,...);  // 将输出内容按照标准格式整理
+    // 将输出内容按照标准格式整理
+    void write(int level, const char *format,...);  
     // 调用 blockqueue中的 flush方法，唤醒写线程将缓冲区中的内容写入文件
     void flush();
 

@@ -20,12 +20,14 @@ public:
     ~HttpConn();
     
     void init(int sockFd, const sockaddr_in& addr);
+    //从客户端中读取数据，即从套接字读取
     ssize_t read(int* saveErrno);
+    //制作好的响应报文写入客户端，即写进套接字
     ssize_t write(int* saveErrno);
     void Close();
     int GetFd() const;
     int GetPort() const;
-    const char* GetIP() const;
+    const char *GetIP() const;
     sockaddr_in GetAddr() const;
     bool process();
 
@@ -44,6 +46,8 @@ public:
     
 private:
    
+    //这个是 sockfd，即从 accept 返回的新连接，每个
+    //http 对象都有自己的 fd
     int fd_;
     struct  sockaddr_in addr_;
 
@@ -52,7 +56,7 @@ private:
     int iovCnt_;
     struct iovec iov_[2];
     
-    // 下面两个缓冲区是和 client 端交互的。
+    //下面两个缓冲区是和 client 端交互的。
     //存从浏览器发来的数据，要解析的请求报文就从这个缓冲区中读取
     Buffer readBuff_;
     //将弄好的响应的报文就是写入这个缓冲区中，用来发送个浏览器
