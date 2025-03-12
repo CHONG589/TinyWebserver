@@ -11,7 +11,7 @@ void SqlConnPool::Init(const char* host, uint16_t port,
               const char* dbName, int connSize = 10) {
     assert(connSize > 0);
     for(int i = 0; i < connSize; i++) {
-        MYSQL* conn = nullptr;
+        MYSQL *conn = nullptr;
         conn = mysql_init(conn);
         if(!conn) {
             LOG_ERROR("MySql init error!");
@@ -29,8 +29,8 @@ void SqlConnPool::Init(const char* host, uint16_t port,
     sem_init(&semId_, 0, MAX_CONN_);
 }
 
-MYSQL* SqlConnPool::GetConn() {
-    MYSQL* conn = nullptr;
+MYSQL *SqlConnPool::GetConn() {
+    MYSQL *conn = nullptr;
     if(connQue_.empty()) {
         LOG_WARN("SqlConnPool busy!");
         return nullptr;
