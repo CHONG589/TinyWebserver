@@ -69,7 +69,8 @@ ssize_t HttpConn::read(int* saveErrno) {
 ssize_t HttpConn::write(int* saveErrno) {
     ssize_t len = -1;
     do {
-        len = writev(fd_, iov_, iovCnt_);   // 将iov的内容写到fd中
+        // 将iov的内容写到fd中
+        len = writev(fd_, iov_, iovCnt_);   
         if(len <= 0) {
             *saveErrno = errno;
             break;

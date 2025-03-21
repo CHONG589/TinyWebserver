@@ -1,7 +1,8 @@
 #include "httprequest.h"
 using namespace std;
 
-// 网页名称，和一般的前端跳转不同，这里需要将请求信息放到后端来验证一遍再上传（和小组成员还起过争执）
+// 网页名称，和一般的前端跳转不同，这里需要将请求信息放到后
+// 端来验证一遍再上传（和小组成员还起过争执）
 const unordered_set<string> HttpRequest::DEFAULT_HTML {
     "/index", "/register", "/login", "/welcome", "/video", "/picture",
 };
@@ -27,7 +28,9 @@ bool HttpRequest::parse(Buffer& buff) {
     // 读取数据开始
     while(buff.ReadableBytes() && state_ != FINISH) {
         // 从buff中的读指针开始到读指针结束，这块区域是未读取得数据并去处"\r\n"。
-        const char* lineend = search(buff.Peek(), buff.BeginWriteConst(), END, END+2);
+        //第一，二个参数是查找范围，三，四个是要查找的序列,const char END[] = "\r\n";
+        //查找成功返回指向查找到的子序列中的第一个元素
+        const char *lineend = search(buff.Peek(), buff.BeginWriteConst(), END, END+2);
         string line(buff.Peek(), lineend);
         switch (state_) {
             case REQUEST_LINE:
@@ -35,13 +38,16 @@ bool HttpRequest::parse(Buffer& buff) {
                 if(!ParseRequestLine_(line)) {
                     return false;
                 }
-                ParsePath_();   // 解析路径
+                // 解析路径
+                ParsePath_();   
                 break;
             case HEADERS:
                 ParseHeader_(line);
-                if(buff.ReadableBytes() <= 2) {  // 说明是空行，get请求，后面为\r\n
-                    //可读数据已经没了，说明解析完头部就已经没了，是 GET 请求
-                    state_ = FINISH;   // 提前结束
+                if(buff.ReadableBytes() <= 2) { 
+                    //说明是空行，get请求，后面为\r\n 
+                    //可读数据已经没了，说明解析完头部就已经没了,是 GET 请求
+                    //请求数据不在GET方法中使用，提前结束
+                    state_ = FINISH; 
                 }
                 break;
             case BODY:
@@ -50,11 +56,14 @@ bool HttpRequest::parse(Buffer& buff) {
             default:
                 break;
         }
-        if(lineend == buff.BeginWrite()) {  // 读完了
+        if(lineend == buff.BeginWrite()) {
+            //如果缓存中的数据读完了，就跳出循环，表示
+            //全部解析完。  
             buff.RetrieveAll();
             break;
         }
-        buff.RetrieveUntil(lineend + 2);        // 跳过回车换行
+        // 跳过回车换行
+        buff.RetrieveUntil(lineend + 2);        
     }
     LOG_DEBUG("[%s], [%s], [%s]", method_.c_str(), path_.c_str(), version_.c_str());
     return true;
@@ -63,8 +72,10 @@ bool HttpRequest::parse(Buffer& buff) {
 bool HttpRequest::ParseRequestLine_(const string& line) {
     //([^ ]*):表示任意除了空格外的元素
     regex patten("^([^ ]*) ([^ ]*) HTTP/([^ ]*)$");
-    smatch Match;   // 用来匹配patten得到结果
-    if(regex_match(line, Match, patten)) {  // 匹配指定字符串整体是否符合
+    // 用来匹配patten得到结果
+    smatch Match;   
+    if(regex_match(line, Match, patten)) {  
+        // 匹配指定字符串整体是否符合
         // 在匹配规则中，以括号()的方式来划分组别 一共三个括号 [0]表示整体
         // 即Match[0]表示匹配的整个请求行。下标1，2，3分别表示对应的三种类别
         method_ = Match[1];
@@ -80,15 +91,18 @@ bool HttpRequest::ParseRequestLine_(const string& line) {
 // 解析路径，统一一下path名称,方便后面解析资源
 void HttpRequest::ParsePath_() {
     if(path_ == "/") {
+        //请求的是根目录，那么给它一个 index.html
         path_ = "/index.html";
     } 
     else {
+        //请求的是自己定义的页
         if(DEFAULT_HTML.find(path_) != DEFAULT_HTML.end()) {
             path_ += ".html";
         }
     }
 }
 
+//header中的都是类似 key: value 的类型
 void HttpRequest::ParseHeader_(const string& line) {
     //第一组([^:]*)：表示所有非冒号的字符，即类型
     //然后后面紧跟一个冒号，
@@ -97,52 +111,20 @@ void HttpRequest::ParseHeader_(const string& line) {
     regex patten("^([^:]*): ?(.*)$");
     smatch Match;
     if(regex_match(line, Match, patten)) {
+        //解析完一行，继续请求头部，因为头部可能
+        //有好几行。
         header_[Match[1]] = Match[2];
-    } else {    // 匹配失败说明首部行匹配完了，状态变化
+    } 
+    else { 
+        // 匹配失败说明首部行匹配完了，状态变化   
         state_ = BODY;
     }
 }
 
-void HttpRequest::ParseBody_(const string& line) {
-    body_ = line;
-    ParsePost_();
-    state_ = FINISH;    // 状态转换为下一个状态
-    LOG_DEBUG("Body:%s, len:%d", line.c_str(), line.size());
-}
-
-
-// 16进制转化为10进制
-int HttpRequest::ConverHex(char ch) {
-    if(ch >= 'A' && ch <= 'F') 
-        return ch -'A' + 10;
-    if(ch >= 'a' && ch <= 'f') 
-        return ch -'a' + 10;
-    return ch;
-}
-
-// 处理post请求
-void HttpRequest::ParsePost_() {
-    if(method_ == "POST" && header_["Content-Type"] == "application/x-www-form-urlencoded") {
-        ParseFromUrlencoded_();     // POST请求体示例
-        if(DEFAULT_HTML_TAG.count(path_)) { // 如果是登录/注册的path
-            int tag = DEFAULT_HTML_TAG.find(path_)->second; 
-            LOG_DEBUG("Tag:%d", tag);
-            if(tag == 0 || tag == 1) {
-                bool isLogin = (tag == 1);  // 为1则是登录
-                if(UserVerify(post_["username"], post_["password"], isLogin)) {
-                    path_ = "/welcome.html";
-                } 
-                else {
-                    path_ = "/error.html";
-                }
-            }
-        }
-    }   
-}
-
-// 从url中解析编码
+//从url中解析编码
+//如：http://localhost/index.html?key1=value1&key2=value2
 void HttpRequest::ParseFromUrlencoded_() {
-    if(body_.size() == 0) { return; }
+    if(body_.size() == 0) return ; 
 
     string key, value;
     int num = 0;
@@ -153,6 +135,8 @@ void HttpRequest::ParseFromUrlencoded_() {
         char ch = body_[i];
         switch (ch) {
         case '=':
+            //第一个参数是开始位置，第二个是获取子串的长度
+            //成功则返回[j, i - j] 中的字符串
             key = body_.substr(j, i - j);
             j = i + 1;
             break;
@@ -180,6 +164,47 @@ void HttpRequest::ParseFromUrlencoded_() {
         value = body_.substr(j, i - j);
         post_[key] = value;
     }
+}
+
+// 处理post请求
+void HttpRequest::ParsePost_() {
+    if(method_ == "POST" && header_["Content-Type"] == "application/x-www-form-urlencoded") {
+        // 从url中解析编码
+        ParseFromUrlencoded_();
+        if(DEFAULT_HTML_TAG.count(path_)) { 
+            // 如果是登录/注册的path
+            int tag = DEFAULT_HTML_TAG.find(path_)->second; 
+            LOG_DEBUG("Tag:%d", tag);
+            if(tag == 0 || tag == 1) {
+                bool isLogin = (tag == 1);  // 为1则是登录
+                if(UserVerify(post_["username"], post_["password"], isLogin)) {
+                    path_ = "/welcome.html";
+                } 
+                else {
+                    path_ = "/error.html";
+                }
+            }
+        }
+    }   
+}
+
+void HttpRequest::ParseBody_(const string& line) {
+    body_ = line;
+    //因为有 body，所以是 post请求，会更改服务器中的数据，这里
+    //用另外一个函数来处理。
+    ParsePost_();
+    state_ = FINISH;    // 状态转换为下一个状态
+    LOG_DEBUG("Body:%s, len:%d", line.c_str(), line.size());
+}
+
+
+// 16进制转化为10进制
+int HttpRequest::ConverHex(char ch) {
+    if(ch >= 'A' && ch <= 'F') 
+        return ch -'A' + 10;
+    if(ch >= 'a' && ch <= 'f') 
+        return ch -'a' + 10;
+    return ch;
 }
 
 bool HttpRequest::UserVerify(const string &name, const string &pwd, bool isLogin) {

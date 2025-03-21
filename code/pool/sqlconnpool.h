@@ -15,14 +15,14 @@
 class SqlConnPool {
 public:
     static SqlConnPool *Instance();
+    void Init(const char* host, uint16_t port,
+        const char* user,const char* pwd, 
+        const char* dbName, int connSize);
 
     MYSQL *GetConn();
     void FreeConn(MYSQL * conn);
     int GetFreeConnCount();
 
-    void Init(const char* host, uint16_t port,
-              const char* user,const char* pwd, 
-              const char* dbName, int connSize);
     void ClosePool();
 
 private:
@@ -70,7 +70,7 @@ private:
 // 连接的安全释放，不会出现连接泄漏。而且，使用RAII机制，可以保证连接的唯一性，不会出现多个线程同时获取同一个连接。
 class SqlConnRAII {
 public:
-    SqlConnRAII(MYSQL** sql, SqlConnPool *connpool) {
+    SqlConnRAII(MYSQL **sql, SqlConnPool *connpool) {
         assert(connpool);
         *sql = connpool->GetConn();
         sql_ = *sql;

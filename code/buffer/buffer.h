@@ -30,7 +30,7 @@ public:
     size_t PrependableBytes() const;
 
     //返回可读数据的起始地址
-    const char* Peek() const;
+    const char *Peek() const;
     //确保可写的长度
     void EnsureWriteable(size_t len);
     void HasWritten(size_t len);
@@ -50,7 +50,7 @@ public:
     std::string RetrieveAllToStr();
 
     //// 写指针的位置
-    const char* BeginWriteConst() const;
+    const char *BeginWriteConst() const;
     char* BeginWrite();
 
     void Append(const std::string& str);

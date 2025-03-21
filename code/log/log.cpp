@@ -128,7 +128,7 @@ void Log::write(int level, const char *format, ...) {
         
         locker.lock();
         flush();
-        fclose(fp_);
+        // fclose(fp_);
         //既然日志行数或者不是同一天的，所以要重新打开新文件。
         fp_ = fopen(newFile, "a");
         assert(fp_ != nullptr);
