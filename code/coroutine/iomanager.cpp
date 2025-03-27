@@ -435,6 +435,7 @@ void IOManager::idle() {
         //     cbs.clear();
         // }
 
+        LOG_INFO("rt: %d", rt);
         for (int i = 0; i < rt; ++i) {
             epoll_event &event = events[i];
             if (event.data.fd == m_tickleFds[0]) {

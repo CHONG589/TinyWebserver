@@ -84,7 +84,9 @@ void WebServer::handle_accept() {
                 break;
             }
             users_[connfd].init(connfd, client_addr);
-            iom_->addEvent(connfd, IOManager::READ, std::bind(&WebServer::OnRead_, this, &users_[connfd]));
+            iom_->schedule(std::bind(&WebServer::OnRead_, this, &users_[connfd]));
+            // iom_->addEvent(connfd, IOManager::WRITE, std::bind(&WebServer::OnWrite_, this, &users_[connfd]));
+            // iom_->addEvent(connfd, IOManager::READ, std::bind(&WebServer::OnRead_, this, &users_[connfd]));
             LOG_INFO("Client[%d] in!", users_[connfd].GetFd());
 
             //添加定时器
@@ -93,11 +95,13 @@ void WebServer::handle_accept() {
 
         // }
     }
-    iom_->addEvent(listenFd_, IOManager::READ, std::bind(&WebServer::handle_accept, this));
+    // iom_->addEvent(listenFd_, IOManager::READ, std::bind(&WebServer::handle_accept, this));
 }
 
 void WebServer::OnRead_(HttpConn *client) {
+    LOG_INFO("deal read...");
     assert(client);
+    iom_->addEvent(client->GetFd(), IOManager::READ, std::bind(&WebServer::OnRead_, this, client));
     int ret = -1;
     int readErrno = 0;
     // 读取客户端套接字的数据，读到自己的httpconn读缓存区
@@ -112,6 +116,7 @@ void WebServer::OnRead_(HttpConn *client) {
 
 void WebServer::OnWrite_(HttpConn* client) {
     assert(client);
+    iom_->addEvent(client->GetFd(), IOManager::WRITE, std::bind(&WebServer::OnWrite_, this, client));
     int ret = -1;
     int writeErrno = 0;
     ret = client->write(&writeErrno);
@@ -119,14 +124,14 @@ void WebServer::OnWrite_(HttpConn* client) {
         /* 传输完成 */
         if(client->IsKeepAlive()) {
             // 保持连接，继续监测读事件
-            iom_->addEvent(client->GetFd(), IOManager::READ, std::bind(&WebServer::OnRead_, this, client));
+            // iom_->addEvent(client->GetFd(), IOManager::READ, std::bind(&WebServer::OnRead_, this, client));
             return;
         }
     }
     else if(ret < 0) {
         if(writeErrno == EAGAIN) { 
             // 缓冲区满了，继续传输，设置写事件。
-            iom_->addEvent(client->GetFd(), IOManager::WRITE, std::bind(&WebServer::OnWrite_, this, client));
+            // iom_->addEvent(client->GetFd(), IOManager::WRITE, std::bind(&WebServer::OnWrite_, this, client));
             return;
         }
     }
@@ -144,11 +149,15 @@ void WebServer::OnProcess(HttpConn* client) {
         // 入到 httpconn 的写缓存区，所以这里需要将写缓存区的数据发送给
         // 客户端。所以这里增加相应的写事件，并将 OnWrite_ 加入线程池的任务队列中。
         // 要增加写事件，然后检测到写事件后，再调用 httpconn 的 write 写给 client。   
-        iom_->addEvent(client->GetFd(), IOManager::WRITE, std::bind(&WebServer::OnWrite_, this, client));
+        // iom_->addEvent(client->GetFd(), IOManager::WRITE, std::bind(&WebServer::OnWrite_, this, client));
+        // iom_->schedule(std::bind(&WebServer::OnWrite_, this, client));
+        WebServer::OnWrite_(client);
     } 
     else {
         // 处理请求失败，继续读取请求数据。
-        iom_->addEvent(client->GetFd(), IOManager::READ, std::bind(&WebServer::OnRead_, this, client));
+        // iom_->addEvent(client->GetFd(), IOManager::READ, std::bind(&WebServer::OnRead_, this, client));
+        // iom_->schedule(std::bind(&WebServer::OnRead_, this, client));
+        WebServer::OnRead_(client);
     }
 }
 
@@ -191,7 +200,9 @@ bool WebServer::InitSocket_() {
         close(listenFd_);
         return false;
     }
-    iom_->addEvent(listenFd_, IOManager::READ, std::bind(&WebServer::handle_accept, this));  
+    handle_accept();
+    // iom_->schedule(std::bind(&WebServer::handle_accept, this));
+    // iom_->addEvent(listenFd_, IOManager::READ, std::bind(&WebServer::handle_accept, this));  
     LOG_INFO("Server port:%d", port_);
     return true;
 }
