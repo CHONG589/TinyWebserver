@@ -28,6 +28,7 @@ public:
 private:
     bool InitSocket_(); 
     void handle_accept();
+    void handleClient(HttpConn *client);
     void SendError_(int fd, const char*info);
     void CloseConn_(HttpConn* client, IOManager::Event event);
     void OnRead_(HttpConn* client);
