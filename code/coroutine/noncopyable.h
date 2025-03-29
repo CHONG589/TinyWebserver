@@ -1,5 +1,12 @@
-#ifndef __NONCOPYABLE_H__
-#define __NONCOPYABLE_H__
+/**
+ * @file noncopyable.h
+ * @brief 不可拷贝对象封装
+ * @author zch 
+ * @date 2025-03-29
+ */
+
+#ifndef NONCOPYABLE_H__
+#define NONCOPYABLE_H__
 
 /**
  * @brief 对象无法拷贝,赋值
