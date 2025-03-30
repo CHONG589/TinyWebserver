@@ -7,8 +7,8 @@
 #ifndef ENDIAN_H__
 #define ENDIAN_H__
 
-#define SYLAR_LITTLE_ENDIAN 1
-#define SYLAR_BIG_ENDIAN 2
+#define ZCH_LITTLE_ENDIAN       1
+#define ZCH_BIG_ENDIAN          2
 
 #include <byteswap.h>
 #include <stdint.h>
@@ -41,12 +41,12 @@ byteswap(T value) {
 }
 
 #if BYTE_ORDER == BIG_ENDIAN
-#define SYLAR_BYTE_ORDER SYLAR_BIG_ENDIAN
+#define ZCH_BYTE_ORDER ZCH_BIG_ENDIAN
 #else
-#define SYLAR_BYTE_ORDER SYLAR_LITTLE_ENDIAN
+#define ZCH_BYTE_ORDER ZCH_LITTLE_ENDIAN
 #endif
 
-#if SYLAR_BYTE_ORDER == SYLAR_BIG_ENDIAN
+#if ZCH_BYTE_ORDER == ZCH_BIG_ENDIAN
 
 /**
  * @brief 只在小端机器上执行byteswap, 在大端机器上什么都不做
