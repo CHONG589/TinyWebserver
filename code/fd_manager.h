@@ -62,7 +62,7 @@ public:
     typedef RWMutex RWMutexType;
 
     FdManager();
-    FdCtx::ptr get(int fd, bool auto_create = false);
+    FdCtx::ptr get(int fd, bool auto_create = true);
     void del(int fd);
 
 private:

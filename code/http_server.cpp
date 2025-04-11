@@ -34,8 +34,8 @@ void HttpServer::handleClient(Socket::ptr client) {
     users_[client_socket].init(client_socket, *addr);
     while(client->isConnected()) {
         int errnoNum = 0;
-        users_[client_socket].read(&errnoNum);
-        if(errno != EAGAIN) {
+        int ret = users_[client_socket].read(&errnoNum);
+        if(ret <= 0 && errno != EAGAIN) {
             client->close();
             return ;
         }

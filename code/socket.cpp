@@ -199,8 +199,8 @@ bool Socket::listen(int backlog) {
 }
 
 bool Socket::init(int sock) {
-    FdCtx::ptr ctx = FdMgr::GetInstance()->get(m_sock);
-    if(ctx && ctx->isSocket() && !ctx->isClose()) {
+    FdCtx::ptr ctx = FdMgr::GetInstance()->get(sock);
+    if(ctx &&!ctx->isClose()) {
         m_sock = sock;
         m_isConnected = true;
         initSock();
