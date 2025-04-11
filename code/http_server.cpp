@@ -14,7 +14,7 @@ HttpServer::HttpServer(bool keepalive
     Log::Instance()->init(1, "./log", ".log", 1024);
     char *srcDir = getcwd(nullptr, 256);
     // assert(srcDir);
-    strcat(srcDir, "/resources/");
+    strcat(srcDir, "/TinyWebserver/resources");
     HttpConn::userCount = 0;
     HttpConn::srcDir = srcDir;
     SqlConnPool::Instance()->Init("localhost", 3306, "zch", "589520", "yourdb", 12);

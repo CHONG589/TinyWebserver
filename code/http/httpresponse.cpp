@@ -62,7 +62,9 @@ void HttpResponse::Init(const string& srcDir, string& path, bool isKeepAlive, in
 
 void HttpResponse::MakeResponse(Buffer& buff) {
     /* 判断请求的资源文件 */
-    if(stat((srcDir_ + path_).data(), &mmFileStat_) < 0 || S_ISDIR(mmFileStat_.st_mode)) {
+    int ret = stat((srcDir_ + path_).data(), &mmFileStat_);
+    int flag = S_ISDIR(mmFileStat_.st_mode);
+    if(ret < 0 || flag) {
         code_ = 404;
     }
     //S_IROTH：有无读权限
