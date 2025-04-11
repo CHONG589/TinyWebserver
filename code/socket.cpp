@@ -2,7 +2,7 @@
 #include "./log/log.h"
 #include "./coroutine/iomanager.h"
 #include "fd_manager.h"
-#include "hook.h"
+// #include "hook.h"
 
 Socket::Socket(int family, int type, int protocol)
     : m_sock(-1)
@@ -165,11 +165,11 @@ bool Socket::connect(const Address::ptr addr, uint64_t timeout_ms) {
         }
     }
     else {
-        if(::connect_with_timeout(m_sock, addr->getAddr(), addr->getAddrLen(), timeout_ms)) {
-            LOG_ERROR("connect timeout: %c!!!", strerror(errno));
-            close();
-            return false;
-        }
+        // if(::connect_with_timeout(m_sock, addr->getAddr(), addr->getAddrLen(), timeout_ms)) {
+        //     LOG_ERROR("connect timeout: %c!!!", strerror(errno));
+        //     close();
+        //     return false;
+        // }
     }
     m_isConnected = true;
     getRemoteAddress();
@@ -200,7 +200,7 @@ bool Socket::listen(int backlog) {
 
 bool Socket::init(int sock) {
     FdCtx::ptr ctx = FdMgr::GetInstance()->get(m_sock);
-    if(ctx && ctx->isSocket() && !ctx->isClosed()) {
+    if(ctx && ctx->isSocket() && !ctx->isClose()) {
         m_sock = sock;
         m_isConnected = true;
         initSock();

@@ -24,7 +24,7 @@ bool TcpServer::bind(Address::ptr addr) {
     return bind(addrs, fails);
 }
 
-bool TcpServer::bind(const std::vector<Address::ptr> &addressof
+bool TcpServer::bind(const std::vector<Address::ptr> &addrs
                         , std::vector<Address::ptr> &fails) {
     for(auto &addr : addrs) {
         Socket::ptr sock = Socket::CreateTCP(addr);
@@ -46,7 +46,7 @@ bool TcpServer::bind(const std::vector<Address::ptr> &addressof
     }
 
     for(auto &i : m_socks) {
-        LOG_INFO("type = %s, name = %s, server bind success: %s", m_tpe.c_str(), m_name.c_str(), i->toString().c_str());
+        LOG_INFO("type = %s, name = %s, server bind success", m_type, m_name);
     }
     return true;
 }
@@ -75,7 +75,7 @@ void TcpServer::stop() {
 }
 
 void TcpServer::handleClient(Socket::ptr client) {
-    LOG_INFO("handle client: %s", client->toString().c_str());
+    LOG_INFO("handle client");
 }
 
 void TcpServer::startAccept(Socket::ptr sock) {

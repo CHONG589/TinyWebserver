@@ -1,11 +1,17 @@
 #include <unistd.h>
-#include "server/webserver.h"
+
+#include "coroutine/iomanager.h"
+#include "http_server.h"
+
+void run() {
+    Address::ptr addr = IPv4Address::Create(INADDR_ANY, 6687);
+
+    std::shared_ptr<HttpServer> server = std::make_shared<HttpServer>(true);
+    while(!server->bind(addr)) ;
+    server->start();
+}
 
 int main() {
-    // 守护进程 后台运行 
-    WebServer server(
-        7667, //3,             // 端口 ET模式 
-        3306, "zch", "589520", "yourdb", /* Mysql配置 */
-        12, true, 1, 1024);             /* 连接池数量 线程池数量 日志开关 日志等级 日志异步队列容量 */
-    //server.iom_->schedule();
+    IOManager manager(4, true);
+    manager.schedule(run);
 } 

@@ -26,11 +26,11 @@ bool FdCtx::init() {
     }
 
     if(m_isSocket) {
-        int flags = fcntl_f(m_fd, F_GETFL, 0);
-        if(!(flags & O_NONBLOCK)) {
-            fcntl_f(m_fd, F_SETFL, flags | O_NONBLOCK);
-        }
-        m_sysNonblock = true;
+        // int flags = fcntl_f(m_fd, F_GETFL, 0);
+        // if(!(flags & O_NONBLOCK)) {
+        //     fcntl_f(m_fd, F_SETFL, flags | O_NONBLOCK);
+        // }
+        // m_sysNonblock = true;
     }
     else {
         m_sysNonblock = false;

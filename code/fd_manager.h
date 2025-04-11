@@ -15,7 +15,7 @@
 #include <sys/socket.h>
 
 #include "./coroutine/thread.h"
-// #include "singleton.h"
+#include "coroutine/singleton.h"
 
 /**
  * @brief 文件句柄上下文
