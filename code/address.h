@@ -11,6 +11,8 @@
 #include <memory>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 #include <string>
 #include <sys/un.h>
 
