@@ -14,7 +14,7 @@ HttpServer::HttpServer(bool keepalive
     Log::Instance()->init(1, "./log", ".log", 1024);
     char *srcDir = getcwd(nullptr, 256);
     // assert(srcDir);
-    strcat(srcDir, "/TinyWebserver/resources");
+    strcat(srcDir, "/resources");
     HttpConn::userCount = 0;
     HttpConn::srcDir = srcDir;
     SqlConnPool::Instance()->Init("localhost", 3306, "zch", "589520", "yourdb", 12);
@@ -34,13 +34,32 @@ void HttpServer::handleClient(Socket::ptr client) {
     users_[client_socket].init(client_socket, *addr);
     while(client->isConnected()) {
         int errnoNum = 0;
-        int ret = users_[client_socket].read(&errnoNum);
-        if(ret <= 0 && errno != EAGAIN) {
+        int position = 0;
+        int writeNum = 0;
+        int readNum = users_[client_socket].read(&errnoNum);
+        if(readNum <= 0) {
+            if(errno == EINTR) {
+                continue ;
+            }
             client->close();
             return ;
         }
         if(users_[client_socket].process()) {
             users_[client_socket].write(&errnoNum);
+            break;
+            // position = 0;
+            // while(readNum > 0) {
+            //     writeNum = users_[client_socket].write(&errnoNum);
+            //     if(writeNum <= 0) {
+            //         if(errno == EINTR) {
+            //             continue ;
+            //         }
+            //         client->close();
+            //         return ;
+            //     }
+            //     readNum -= writeNum;
+            // }
         }
     }
+    client->close();
 }

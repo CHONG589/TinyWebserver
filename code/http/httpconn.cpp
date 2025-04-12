@@ -55,6 +55,7 @@ int HttpConn::GetPort() const {
 }
 
 ssize_t HttpConn::read(int* saveErrno) {
+    LOG_INFO("start Read");
     ssize_t len = -1;
     do {
         len = readBuff_.ReadFd(fd_, saveErrno);
@@ -62,15 +63,19 @@ ssize_t HttpConn::read(int* saveErrno) {
             break;
         }
     } while (isET); // ET:边沿触发要一次性全部读出
+    LOG_INFO("Read %d bytes from client", len);
     return len;
 }
 
 // 主要采用writev连续写函数
 ssize_t HttpConn::write(int* saveErrno) {
     ssize_t len = -1;
+    int remainLen;
     do {
         // 将iov的内容写到fd中
+        LOG_INFO("before write");
         len = writev(fd_, iov_, iovCnt_);   
+        LOG_INFO("Write %d bytes", len);
         if(len <= 0) {
             *saveErrno = errno;
             break;
@@ -97,7 +102,9 @@ ssize_t HttpConn::write(int* saveErrno) {
             iov_[0].iov_len -= len; 
             writeBuff_.Retrieve(len);
         }
-    } while(isET || ToWriteBytes() > 10240);
+        remainLen = iov_[0].iov_len + iov_[1].iov_len;
+
+    } while(remainLen > 0);
     return len;
 }
 
@@ -116,7 +123,8 @@ bool HttpConn::process() {
     }
 
     // 生成响应报文放入writeBuff_中
-    response_.MakeResponse(writeBuff_); 
+    response_.MakeResponse(writeBuff_);
+    LOG_INFO("response len: %d", writeBuff_.ReadableBytes()); 
     // 响应头
     // 将写缓冲区中的内容放入类中的iov中。
     iov_[0].iov_base = const_cast<char*>(writeBuff_.Peek());
@@ -129,6 +137,6 @@ bool HttpConn::process() {
         iov_[1].iov_len = response_.FileLen();
         iovCnt_ = 2;
     }
-    LOG_DEBUG("filesize:%d, %d  to %d", response_.FileLen() , iovCnt_, ToWriteBytes());
+    LOG_INFO("filesize:%d", iov_[0].iov_len + iov_[1].iov_len);
     return true;
 }

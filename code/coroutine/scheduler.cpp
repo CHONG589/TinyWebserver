@@ -229,7 +229,6 @@ void Scheduler::run() {
             cb_fiber.reset();
         } 
         else {
-            LOG_INFO("In idle");
             // 进到这个分支情况一定是任务队列空了，调度idle协程即可
             if (idle_fiber->getState() == Fiber::TERM) {
                 // 如果 idle_fiber 已经终止了，说明调度器已经停止了，则退出循环。

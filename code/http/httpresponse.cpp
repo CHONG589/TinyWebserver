@@ -62,8 +62,10 @@ void HttpResponse::Init(const string& srcDir, string& path, bool isKeepAlive, in
 
 void HttpResponse::MakeResponse(Buffer& buff) {
     /* 判断请求的资源文件 */
-    int ret = stat((srcDir_ + path_).data(), &mmFileStat_);
+    LOG_INFO("file path %s", (srcDir_ + path_).data());
+    int ret = stat(((srcDir_ + path_).data()), &mmFileStat_);
     int flag = S_ISDIR(mmFileStat_.st_mode);
+    LOG_INFO("flag = %d, ret = %d", flag, ret);
     if(ret < 0 || flag) {
         code_ = 404;
     }
@@ -127,7 +129,7 @@ void HttpResponse::AddContent_(Buffer& buff) {
     }
 
     //将文件映射到内存提高文件的访问速度  MAP_PRIVATE 建立一个写入时拷贝的私有映射
-    LOG_DEBUG("file path %s", (srcDir_ + path_).data());
+    LOG_INFO("file path %s", (srcDir_ + path_).data());
     int* mmRet = (int*)mmap(0, mmFileStat_.st_size, PROT_READ, MAP_PRIVATE, srcFd, 0);
     if(*mmRet == -1) {
         ErrorContent(buff, "File NotFound!");

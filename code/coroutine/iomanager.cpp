@@ -377,8 +377,7 @@ void IOManager::FdContext::triggerEvent(IOManager::Event event) {
 //如果有新的调度任务，那应该立即退出idle状态，并执行对应的任务；二是关注当前
 //注册的所有IO事件有没有触发，如果有触发，那么应该执行IO事件对应的回调函数
 void IOManager::idle() {
-    LOG_INFO("IOManager::idle...");
-
+    
     //一次epoll_wait最多接收256个fd的就绪事件，如果超过了这个数，那么会在下
     //轮epoll_wati继续处理
     const uint64_t MAX_EVNETS = 256;
@@ -426,16 +425,15 @@ void IOManager::idle() {
         } while(true);
 
         //收集所有已超时的定时器，执行回调函数
-        // std::vector<std::function<void()>> cbs;
-        // listExpiredCb(cbs);
-        // if(!cbs.empty()) {
-        //     for(const auto &cb : cbs) {
-        //         schedule(cb);
-        //     }
-        //     cbs.clear();
-        // }
+        std::vector<std::function<void()>> cbs;
+        listExpiredCb(cbs);
+        if(!cbs.empty()) {
+            for(const auto &cb : cbs) {
+                schedule(cb);
+            }
+            cbs.clear();
+        }
 
-        LOG_INFO("rt: %d", rt);
         for (int i = 0; i < rt; ++i) {
             epoll_event &event = events[i];
             if (event.data.fd == m_tickleFds[0]) {
