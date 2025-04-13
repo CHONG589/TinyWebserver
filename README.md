@@ -29,3 +29,17 @@ ssize_t HttpConn::read(int* saveErrno) {
     return len;
 }
 ```
+
+# 测试结果
+
+在 CPU i5，内存 4G 的机器上运行。
+
+在第一版本没有协程，双 ET 模式下，用 webbench 实现了 8K 的并发量，运行 10s，QPS 为 1731。
+
+![V1_0](./img/V1_0.png)
+
+在第二版本有协程，但是没有采用 ET 模式 (还未实现)，用 webbench 实现了 8K 的并发量，运行 10s，QPS 为 1524。
+
+![V1_1](./img/V1_1.png)
+
+怎么性能还下降了？是不是因为没有用到 ET 模式？(待优化的地方)
