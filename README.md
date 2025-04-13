@@ -2,7 +2,9 @@
 
 ```
 cd TinyWebserver
+
 make
+
 ./server
 ```
 
