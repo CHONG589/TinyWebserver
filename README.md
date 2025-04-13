@@ -30,15 +30,17 @@ ssize_t HttpConn::read(int* saveErrno) {
 }
 ```
 
+- 项目中实际是没有用到 iomanager 这个模块的，所以对于 ET 模式、定时事件、Hook 都是没有用到的，项目中只是直接将任务用 `iom_schedule()` 添加到调度器中的，也没有用到 iomanager 的 epoll 。 
+
 # 测试结果
 
 在 CPU i5，内存 4G 的机器上运行。
 
-在第一版本没有协程，双 ET 模式下，用 webbench 实现了 8K 的并发量，运行 10s，QPS 为 1731。
+- 在第一版本没有协程，双 ET 模式下，用 webbench 实现了 8K 的并发量，运行 10s，QPS 为 1731。
 
 ![V1_0](./img/V1_0.png)
 
-在第二版本有协程，但是没有采用 ET 模式 (还未实现)，用 webbench 实现了 8K 的并发量，运行 10s，QPS 为 1524。
+- 在第二版本有协程，但是没有采用 ET 模式 (还未实现)，用 webbench 实现了 8K 的并发量，运行 10s，QPS 为 1524。
 
 ![V1_1](./img/V1_1.png)
 
