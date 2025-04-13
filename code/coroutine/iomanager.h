@@ -3,6 +3,7 @@
 
 #include "scheduler.h"
 #include "timer.h"
+#include "../mutex.h"
 
 class IOManager : public Scheduler, public TimerManager {
 public:

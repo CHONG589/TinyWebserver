@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <sys/epoll.h> // for epoll_xxx()
 #include <fcntl.h>     // for fcntl()
+
 #include "iomanager.h"
 #include "../log/log.h"
 
@@ -82,7 +83,7 @@ IOManager::IOManager(size_t threads, bool use_caller, const std::string &name)
 
     //这里直接开启了Schedluer，也就是说IOManager创建即可调度协程
     start();
-    LOG_INFO("iom_ create end");
+    LOG_DEBUG("iom_ create end");
 }
 
 IOManager::~IOManager() {
@@ -158,7 +159,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
         event_ctx.fiber = Fiber::GetThis();
         assert(event_ctx.fiber->getState() == Fiber::RUNNING);
     }
-    LOG_INFO("Add event fd= %d", fd_ctx->fd);
+    LOG_DEBUG("Add event fd= %d", fd_ctx->fd);
     return 0;
 }
 

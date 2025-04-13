@@ -62,10 +62,10 @@ void HttpResponse::Init(const string& srcDir, string& path, bool isKeepAlive, in
 
 void HttpResponse::MakeResponse(Buffer& buff) {
     /* 判断请求的资源文件 */
-    LOG_INFO("file path %s", (srcDir_ + path_).data());
+    LOG_DEBUG("file path %s", (srcDir_ + path_).data());
     int ret = stat(((srcDir_ + path_).data()), &mmFileStat_);
     int flag = S_ISDIR(mmFileStat_.st_mode);
-    LOG_INFO("flag = %d, ret = %d", flag, ret);
+    LOG_DEBUG("flag = %d, ret = %d", flag, ret);
     if(ret < 0 || flag) {
         code_ = 404;
     }

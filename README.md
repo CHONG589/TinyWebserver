@@ -1,13 +1,31 @@
-# 出现的问题
+# 运行
 
-用 gdb 调试的时候能进去第一个页面，接下来点击就好像不会请求出来了。
+```
+cd TinyWebserver
+make
+./server
+```
 
-直接运行好像有时可以，但是几乎都不行。
+# 遇到的问题记录
 
-看日志只有一次请求，是不是请求一次，关闭连接？除非保活？
+stat 函数不能解析中文字符串，否则会出错，自己在解析路径的时候，由于路径中有中文，导致解析失败，项目运行不了，导致找了好久好久。
 
 # 优化
 
-- 日志路径那里有问题。
-
 - 用 CMake 代替 Makefile。
+
+- 关于 ET 模式的处理，在各种读写中，如：
+
+```Cpp
+ssize_t HttpConn::read(int* saveErrno) {
+    LOG_INFO("start Read");
+    ssize_t len = -1;
+    do {
+        len = readBuff_.ReadFd(fd_, saveErrno);
+        if (len <= 0) {
+            break;
+        }
+    } while (isET); // ET:边沿触发要一次性全部读出
+    return len;
+}
+```

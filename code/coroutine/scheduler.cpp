@@ -1,7 +1,7 @@
 #include <assert.h>
 
 #include "scheduler.h"
-#include "util.h"
+#include "../util.h"
 
 // 当前线程的调度器，同一个调度器下的所有线程共享同一个实例
 static thread_local Scheduler *t_scheduler = nullptr;
@@ -61,7 +61,7 @@ Scheduler::~Scheduler() {
 
 // 启动调度器，对调度器进行一些列的初始化（初始化线程池）。
 void Scheduler::start() {
-    LOG_INFO("Scheduler::start %s", m_name.c_str());
+    LOG_DEBUG("Scheduler::start %s", m_name.c_str());
     MutexType::Lock lock(m_mutex);
     if (m_stopping) {
         LOG_ERROR("Scheduler::start %s error", m_name);
@@ -206,7 +206,7 @@ void Scheduler::run() {
         if (task.fiber) {
             // resume协程，resume返回时，协程要么执行完了，要么半路yield了，
             //总之这个任务就算完成了，活跃线程数减一
-            LOG_INFO("run fiber in scheduler");
+            LOG_DEBUG("run fiber in scheduler");
             task.fiber->resume();
             --m_activeThreadCount;
             task.reset();
@@ -223,7 +223,7 @@ void Scheduler::run() {
                 cb_fiber.reset(new Fiber(task.cb));
             }
             task.reset();
-            LOG_INFO("run fun in scheduler");
+            LOG_DEBUG("run fun in scheduler");
             cb_fiber->resume();
             --m_activeThreadCount;
             cb_fiber.reset();

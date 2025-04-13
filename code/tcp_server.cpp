@@ -46,7 +46,7 @@ bool TcpServer::bind(const std::vector<Address::ptr> &addrs
     }
 
     for(auto &i : m_socks) {
-        LOG_INFO("type = %s, name = %s, server bind success", m_type, m_name);
+        LOG_DEBUG("type = %s, name = %s, server bind success", m_type.data(), m_name.data());
     }
     return true;
 }

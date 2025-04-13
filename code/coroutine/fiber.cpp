@@ -1,5 +1,6 @@
 #include <atomic>
 #include <assert.h>
+
 #include "fiber.h"
 #include "../log/log.h"
 #include "scheduler.h"
@@ -51,7 +52,7 @@ Fiber::Fiber() {
     ++s_fiber_count;
     m_id = s_fiber_id++; // 协程id从0开始，用完加1
 
-    LOG_INFO("Main fiber %llu created", m_id);
+    LOG_DEBUG("Main fiber %llu created", m_id);
 }
 
 //带参数的构造函数用于创建其他协程，需要分配栈
@@ -81,7 +82,7 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool run_in_scheduler)
     //执行完后自动管理，而不是后面通过用户管理。
     makecontext(&m_ctx, &Fiber::MainFunc, 0);
 
-    LOG_INFO("Task fiber %llu created", m_id);
+    LOG_DEBUG("Task fiber %llu created", m_id);
 }
 
 //获取当前协程，同时充当初始化当前线程主协程的作用，这个函数在使用协程之

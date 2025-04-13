@@ -3,9 +3,10 @@
 
 #include <unistd.h>
 #include <sys/syscall.h>
-#include "mutex.h"
-#include "noncopyable.h"
-#include "util.h"
+
+#include "../mutex.h"
+#include "../noncopyable.h"
+#include "../util.h"
 
 /**
  * @brief 线程类

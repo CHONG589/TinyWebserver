@@ -14,7 +14,7 @@
 #include "address.h"
 #include "socket.h"
 #include "coroutine/iomanager.h"
-#include "coroutine/noncopyable.h"
+#include "noncopyable.h"
 
 class TcpServer : public std::enable_shared_from_this<TcpServer>, Noncopyable {
 public:

@@ -11,10 +11,14 @@ HttpServer::HttpServer(bool keepalive
                      , IOManager *accept_worker)
                      : TcpServer(io_worker, accept_worker)
                      , m_isKeepalive(keepalive) {
-    Log::Instance()->init(1, "./log", ".log", 1024);
+    
     char *srcDir = getcwd(nullptr, 256);
-    // assert(srcDir);
+    char *logDir = getcwd(nullptr, 256); 
+    strcat(logDir, "/log");
+    Log::Instance()->init(1, logDir, ".log", 1024);
+    assert(srcDir);
     strcat(srcDir, "/resources");
+    LOG_INFO("srcDir: %s", srcDir);
     HttpConn::userCount = 0;
     HttpConn::srcDir = srcDir;
     SqlConnPool::Instance()->Init("localhost", 3306, "zch", "589520", "yourdb", 12);
@@ -34,8 +38,6 @@ void HttpServer::handleClient(Socket::ptr client) {
     users_[client_socket].init(client_socket, *addr);
     while(client->isConnected()) {
         int errnoNum = 0;
-        int position = 0;
-        int writeNum = 0;
         int readNum = users_[client_socket].read(&errnoNum);
         if(readNum <= 0) {
             if(errno == EINTR) {
@@ -47,18 +49,6 @@ void HttpServer::handleClient(Socket::ptr client) {
         if(users_[client_socket].process()) {
             users_[client_socket].write(&errnoNum);
             break;
-            // position = 0;
-            // while(readNum > 0) {
-            //     writeNum = users_[client_socket].write(&errnoNum);
-            //     if(writeNum <= 0) {
-            //         if(errno == EINTR) {
-            //             continue ;
-            //         }
-            //         client->close();
-            //         return ;
-            //     }
-            //     readNum -= writeNum;
-            // }
         }
     }
     client->close();

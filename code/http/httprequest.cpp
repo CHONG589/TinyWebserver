@@ -65,7 +65,6 @@ bool HttpRequest::parse(Buffer& buff) {
         // 跳过回车换行
         buff.RetrieveUntil(lineend + 2);        
     }
-    LOG_INFO("[%s], [%s], [%s]", method_.c_str(), path_.c_str(), version_.c_str());
     return true;
 }
 
