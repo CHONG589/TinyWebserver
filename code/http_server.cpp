@@ -5,6 +5,8 @@
 #include "http_server.h"
 #include "log/log.h"
 
+std::unordered_map<int, HttpConn> users_;
+
 HttpServer::HttpServer(bool keepalive
                      , IOManager *worker
                      , IOManager *io_worker
@@ -15,7 +17,7 @@ HttpServer::HttpServer(bool keepalive
     char *srcDir = getcwd(nullptr, 256);
     char *logDir = getcwd(nullptr, 256); 
     strcat(logDir, "/log");
-    Log::Instance()->init(1, logDir, ".log", 1024);
+    Log::Instance()->init(0, logDir, ".log", 1024);
     assert(srcDir);
     strcat(srcDir, "/resources");
     LOG_INFO("srcDir: %s", srcDir);
@@ -34,22 +36,48 @@ void HttpServer::handleClient(Socket::ptr client) {
         client->close();
         return ;
     }
-    sockaddr_in *addr = (sockaddr_in *)(client->getRemoteAddress()->getAddr());
-    users_[client_socket].init(client_socket, *addr);
-    while(client->isConnected()) {
-        int errnoNum = 0;
-        int readNum = users_[client_socket].read(&errnoNum);
-        if(readNum <= 0) {
-            if(errno == EINTR) {
-                continue ;
-            }
-            client->close();
-            return ;
-        }
-        if(users_[client_socket].process()) {
-            users_[client_socket].write(&errnoNum);
-            break;
-        }
+    int errnoNum = 0;
+
+    users_[client_socket].read(&errnoNum);
+    users_[client_socket].process();
+    users_[client_socket].write(&errnoNum);
+    m_ioWorker->addEvent(client_socket, IOManager::READ
+        , std::bind(&HttpServer::handleClient, shared_from_this(), client));
+
+    // sockaddr_in *addr = (sockaddr_in *)(client->getRemoteAddress()->getAddr());
+    // users_[client_socket].init(client_socket, *addr);
+    // while(client->isConnected()) {
+    //     int errnoNum = 0;
+    //     int readNum = users_[client_socket].read(&errnoNum);
+    //     if(readNum <= 0) {
+    //         if(errno == EINTR) {
+    //             continue ;
+    //         }
+    //         client->close();
+    //         return ;
+    //     }
+    //     if(users_[client_socket].process()) {
+    //         users_[client_socket].write(&errnoNum);
+    //         break;
+    //     }
+    // }
+    // client->close();
+}
+
+void startAccept(Socket::ptr sock) {
+
+    Socket::ptr client = sock->accept();
+    if(client) {
+        int client_socket = client->getSocket();
+        sockaddr_in *addr = (sockaddr_in *)(client->getRemoteAddress()->getAddr());
+        users_[client_socket].init(client_socket, *addr);
+        
+        client->setRecvTimeout(sock->getRecvTimeout());
+        IOManager::GetThis()->addEvent(client_socket, IOManager::READ
+            , std::bind(&HttpServer::handleClient, shared_from_this(), client));
+        // m_ioWorker->schedule(std::bind(&TcpServer::handleClient, shared_from_this(), client));
     }
-    client->close();
+    else {
+        LOG_ERROR("accept errno = %d, errstr = %s", errno, strerror(errno));
+    }
 }

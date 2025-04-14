@@ -9,7 +9,6 @@
 #define HTTP_SERVER_H__
 
 #include <string>
-#include <unordered_map>
 
 #include "tcp_server.h"
 #include "address.h"
@@ -19,7 +18,7 @@
 
 const int MAX_FD = 65536;
 
-class HttpServer : public TcpServer {
+class HttpServer : public TcpServer, std::enable_shared_from_this<HttpServer> {
 public:
     typedef std::shared_ptr<HttpServer> ptr;
 
@@ -33,12 +32,11 @@ public:
     // void setPassword(const std::string &password) { m_password = password; }
     // void setDatabaseName(const std::string &db_name) { m_database_name = db_name; }
 
-protected:
     void handleClient(Socket::ptr client) override;
+    void startAccept(Socket::ptr sock) override;
 
 private:
     bool m_isKeepalive;
-    std::unordered_map<int, HttpConn> users_;
     // string m_user;
     // string m_password;
     // string m_database_name;

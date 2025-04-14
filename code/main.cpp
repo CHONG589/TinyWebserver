@@ -8,7 +8,7 @@ void run() {
 
     std::shared_ptr<HttpServer> server = std::make_shared<HttpServer>(true);
     while(!server->bind(addr)) ;
-    server->start();
+    // server->start();
 }
 
 int main() {

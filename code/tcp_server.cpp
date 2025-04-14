@@ -1,5 +1,6 @@
 #include "tcp_server.h"
 #include "log/log.h"
+#include "http_server.h"
 
 TcpServer::TcpServer(IOManager *io_worker, IOManager *accept_worker)
     : m_ioWorker(io_worker)
@@ -39,6 +40,8 @@ bool TcpServer::bind(const std::vector<Address::ptr> &addrs
             continue;
         }
         m_socks.push_back(sock);
+        m_acceptWorker->addEvent(sock->getSocket(), IOManager::READ
+            , std::bind(&TcpServer::startAccept, shared_from_this(), sock));
     }
     if(!fails.empty()) {
         m_socks.clear();
@@ -57,7 +60,7 @@ bool TcpServer::start() {
     }
     m_isStop = false;
     for(auto &i : m_socks) {
-        m_acceptWorker->schedule(std::bind(&TcpServer::startAccept, shared_from_this(), i));
+        m_acceptWorker->schedule(std::bind(&HttpServer::startAccept, shared_from_this(), i));
     }
     return true;
 }
@@ -79,14 +82,19 @@ void TcpServer::handleClient(Socket::ptr client) {
 }
 
 void TcpServer::startAccept(Socket::ptr sock) {
-    while(!m_isStop) {
-        Socket::ptr client = sock->accept();
-        if(client) {
-            client->setRecvTimeout(m_recvTimeout);
-            m_ioWorker->schedule(std::bind(&TcpServer::handleClient, shared_from_this(), client));
-        }
-        else {
-            LOG_ERROR("accept errno = %d, errstr = %s", errno, strerror(errno));
-        }
-    }
+    
+    // Socket::ptr client = sock->accept();
+    // if(client) {
+    //     int client_socket = client->getSocket();
+    //     sockaddr_in *addr = (sockaddr_in *)(client->getRemoteAddress()->getAddr());
+    //     users_[client_socket].init(client_socket, *addr);
+        
+    //     client->setRecvTimeout(m_recvTimeout);
+    //     m_ioWorker->addEvent(client_socket, IOManager::READ
+    //         , std::bind(&HttpServer::handleClient, this, client));
+    //     // m_ioWorker->schedule(std::bind(&TcpServer::handleClient, shared_from_this(), client));
+    // }
+    // else {
+    //     LOG_ERROR("accept errno = %d, errstr = %s", errno, strerror(errno));
+    // }
 }
