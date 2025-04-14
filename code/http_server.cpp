@@ -3,6 +3,7 @@
 #include <assert.h>
 
 #include "http_server.h"
+#include "tcp_server.h"
 #include "log/log.h"
 
 std::unordered_map<int, HttpConn> users_;
@@ -41,30 +42,14 @@ void HttpServer::handleClient(Socket::ptr client) {
     users_[client_socket].read(&errnoNum);
     users_[client_socket].process();
     users_[client_socket].write(&errnoNum);
-    m_ioWorker->addEvent(client_socket, IOManager::READ
-        , std::bind(&HttpServer::handleClient, shared_from_this(), client));
 
-    // sockaddr_in *addr = (sockaddr_in *)(client->getRemoteAddress()->getAddr());
-    // users_[client_socket].init(client_socket, *addr);
-    // while(client->isConnected()) {
-    //     int errnoNum = 0;
-    //     int readNum = users_[client_socket].read(&errnoNum);
-    //     if(readNum <= 0) {
-    //         if(errno == EINTR) {
-    //             continue ;
-    //         }
-    //         client->close();
-    //         return ;
-    //     }
-    //     if(users_[client_socket].process()) {
-    //         users_[client_socket].write(&errnoNum);
-    //         break;
-    //     }
-    // }
-    // client->close();
+    // m_ioWorker->addEvent(client_socket, IOManager::READ
+    //     , std::bind(&HttpServer::handleClient, shared_from_this(), client));
+    m_ioWorker->addEvent(client_socket, IOManager::READ
+        , std::bind(&HttpServer::handleClient, client, std::placeholders::_1));
 }
 
-void startAccept(Socket::ptr sock) {
+void HttpServer::startAccept(Socket::ptr sock) {
 
     Socket::ptr client = sock->accept();
     if(client) {
@@ -73,8 +58,10 @@ void startAccept(Socket::ptr sock) {
         users_[client_socket].init(client_socket, *addr);
         
         client->setRecvTimeout(sock->getRecvTimeout());
-        IOManager::GetThis()->addEvent(client_socket, IOManager::READ
-            , std::bind(&HttpServer::handleClient, shared_from_this(), client));
+        // m_ioWorker->addEvent(client_socket, IOManager::READ
+        //     , std::bind(&HttpServer::handleClient, shared_from_this(), client));
+        m_ioWorker->addEvent(client_socket, IOManager::READ
+            , std::bind(&HttpServer::handleClient, client, std::placeholders::_1));
         // m_ioWorker->schedule(std::bind(&TcpServer::handleClient, shared_from_this(), client));
     }
     else {

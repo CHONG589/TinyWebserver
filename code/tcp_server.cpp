@@ -41,7 +41,9 @@ bool TcpServer::bind(const std::vector<Address::ptr> &addrs
         }
         m_socks.push_back(sock);
         m_acceptWorker->addEvent(sock->getSocket(), IOManager::READ
-            , std::bind(&TcpServer::startAccept, shared_from_this(), sock));
+            , std::bind(&HttpServer::startAccept, sock, std::placeholders::_1));
+        // m_acceptWorker->addEvent(sock->getSocket(), IOManager::READ
+        //     , std::bind(&HttpServer::startAccept, shared_from_this(), sock));
     }
     if(!fails.empty()) {
         m_socks.clear();
@@ -83,18 +85,4 @@ void TcpServer::handleClient(Socket::ptr client) {
 
 void TcpServer::startAccept(Socket::ptr sock) {
     
-    // Socket::ptr client = sock->accept();
-    // if(client) {
-    //     int client_socket = client->getSocket();
-    //     sockaddr_in *addr = (sockaddr_in *)(client->getRemoteAddress()->getAddr());
-    //     users_[client_socket].init(client_socket, *addr);
-        
-    //     client->setRecvTimeout(m_recvTimeout);
-    //     m_ioWorker->addEvent(client_socket, IOManager::READ
-    //         , std::bind(&HttpServer::handleClient, this, client));
-    //     // m_ioWorker->schedule(std::bind(&TcpServer::handleClient, shared_from_this(), client));
-    // }
-    // else {
-    //     LOG_ERROR("accept errno = %d, errstr = %s", errno, strerror(errno));
-    // }
 }

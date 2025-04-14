@@ -12,6 +12,6 @@ void run() {
 }
 
 int main() {
-    IOManager manager(4, true);
-    manager.schedule(run);
+    IOManager::ptr manager = make_shared<IOManager>(4, true);
+    manager->schedule(run);
 } 
