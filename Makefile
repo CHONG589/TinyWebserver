@@ -7,7 +7,7 @@ OBJS = ./code/log/*.cpp ./code/pool/*.cpp ./code/coroutine/*.cpp \
        ./code/buffer/*.cpp ./code/*.cpp
 
 all: $(OBJS)
-	$(CXX) $(CFLAGS) $(OBJS) -o ./$(TARGET)  -pthread -lmysqlclient -std=c++14
+	$(CXX) $(CFLAGS) $(OBJS) -o ./$(TARGET)  -pthread -lmysqlclient -O0
 
 clean:
 	rm -rf ./$(TARGET)

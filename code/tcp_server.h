@@ -33,7 +33,7 @@ public:
                       , std::vector<Address::ptr> &fails);
 
     //启动服务，里面需要bind，然后执行，即调用 schedule
-    virtual bool start();
+    // virtual bool start();
     virtual void stop();
     //返回读取超时时间(毫秒)
     uint64_t getRecvTimeout() const { return m_recvTimeout; }

@@ -18,7 +18,7 @@
 
 const int MAX_FD = 65536;
 
-class HttpServer : public TcpServer, std::enable_shared_from_this<HttpServer> {
+class HttpServer : public TcpServer {
 public:
     typedef std::shared_ptr<HttpServer> ptr;
 

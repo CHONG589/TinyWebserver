@@ -137,7 +137,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
         LOG_ERROR("IOManager::addEvent epoll_ctl add event False, fd=%d", fd);
         return -1;
     }
-    setnonblocking(fd);
+    // setnonblocking(fd);
 
     // 待执行IO事件数加1
     ++m_pendingEventCount;
@@ -412,7 +412,8 @@ void IOManager::idle() {
             else {
                 next_timeout = MAX_TIMEOUT;
             }
-            int rt = epoll_wait(m_epfd, events, MAX_EVNETS, MAX_TIMEOUT);
+            int rt = epoll_wait(m_epfd, events, MAX_EVNETS, (int)MAX_TIMEOUT);
+            LOG_INFO("rt = %d", rt);
             if(rt < 0) {
                 if(errno == EINTR) {
                     continue;

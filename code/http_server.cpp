@@ -43,14 +43,16 @@ void HttpServer::handleClient(Socket::ptr client) {
     users_[client_socket].process();
     users_[client_socket].write(&errnoNum);
 
-    // m_ioWorker->addEvent(client_socket, IOManager::READ
-    //     , std::bind(&HttpServer::handleClient, shared_from_this(), client));
-    m_ioWorker->addEvent(client_socket, IOManager::READ
-        , std::bind(&HttpServer::handleClient, client, std::placeholders::_1));
+    auto self = std::dynamic_pointer_cast<HttpServer>(shared_from_this());
+    auto callback = std::bind(&HttpServer::handleClient, client);
+    m_ioWorker->addEvent(client_socket, IOManager::READ, callback);
+    LOG_INFO("add new fd READ event fd = %d", client_socket);
+    
 }
 
 void HttpServer::startAccept(Socket::ptr sock) {
 
+    LOG_INFO("startAccept");
     Socket::ptr client = sock->accept();
     if(client) {
         int client_socket = client->getSocket();
@@ -58,13 +60,10 @@ void HttpServer::startAccept(Socket::ptr sock) {
         users_[client_socket].init(client_socket, *addr);
         
         client->setRecvTimeout(sock->getRecvTimeout());
-        // m_ioWorker->addEvent(client_socket, IOManager::READ
-        //     , std::bind(&HttpServer::handleClient, shared_from_this(), client));
-        m_ioWorker->addEvent(client_socket, IOManager::READ
-            , std::bind(&HttpServer::handleClient, client, std::placeholders::_1));
-        // m_ioWorker->schedule(std::bind(&TcpServer::handleClient, shared_from_this(), client));
+        m_ioWorker->schedule(std::bind(&HttpServer::handleClient, shared_from_this(), client));
     }
     else {
         LOG_ERROR("accept errno = %d, errstr = %s", errno, strerror(errno));
     }
+    m_ioWorker->schedule(std::bind(&HttpServer::startAccept, shared_from_this(), client));
 }
