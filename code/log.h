@@ -89,7 +89,7 @@ public:
     virtual void log(LogEvent::ptr event) = 0;
 
     //将日志输出目标的配置转成YAML String
-    virtual std::string toYamlString() = 0;
+    //virtual std::string toYamlString() = 0;
 
 protected:
     MutexType m_mutex;
@@ -110,7 +110,7 @@ public:
     void log(LogEvent::ptr event) override;
 
     //将日志输出目标的配置转成YAML String
-    std::string toYamlString() override;
+    //std::string toYamlString() override;
 };
 
 /**
@@ -127,7 +127,7 @@ public:
     bool reopen();
 
     //将日志输出目标的配置转成YAML String
-    std::string toYamlString() override;
+    //std::string toYamlString() override;
 
 private:
     std::string m_filename;         // 文件路径   
@@ -156,7 +156,7 @@ public:
     //写日志
     void log(LogEvent::ptr event);
     //将日志器的配置转成YAML String
-    std::string toYamlString();
+    //std::string toYamlString();
 
 private:   
     MutexType m_mutex;                          // Mutex
