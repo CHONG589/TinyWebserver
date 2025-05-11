@@ -1,9 +1,3 @@
-/**
- * @file thread.cc
- * @brief 线程封装实现
- * @version 0.1
- * @date 2021-06-15
- */
 #include "thread.h"
 #include "../log/log.h"
 

@@ -3,7 +3,6 @@
 #include <sys/stat.h>
 
 #include "fd_manager.h"
-// #include "hook.h"
 
 bool FdCtx::init() {
     if(m_isInit) {

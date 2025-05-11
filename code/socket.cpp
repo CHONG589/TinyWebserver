@@ -2,7 +2,6 @@
 #include "./log/log.h"
 #include "./coroutine/iomanager.h"
 #include "fd_manager.h"
-// #include "hook.h"
 
 Socket::Socket(int family, int type, int protocol)
     : m_sock(-1)
