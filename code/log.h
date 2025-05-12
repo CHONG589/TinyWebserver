@@ -17,6 +17,10 @@
 #include <list>
 #include <map>
 
+#include "util.h"
+#include "mutex.h"
+#include "singleton.h"
+
 /**
  * @brief 日志级别
  */
@@ -29,6 +33,11 @@ public:
         INFO   = 300,   // 一般信息
         DEBUG  = 400,   // 调试信息
     };
+
+    //日志级别转字符串
+    static const char *ToString(LogLevel::Level level);
+    //字符串转日志级别
+    static LogLevel::Level FromString(const std::string &str);
 };
 
 /**
@@ -69,6 +78,59 @@ private:
     time_t m_time;                      // 时间戳
     std::string m_threadName;           // 线程名称
     std::string m_loggerName;           // 日志器名称
+};
+
+/**
+ * @brief 日志格式化
+ */
+class LogFormatter {
+public:
+    typedef std::shared_ptr<LogFormatter> ptr;
+
+    /**
+     * - %m 消息
+     * - %p 日志级别
+     * - %c 日志器名称
+     * - %d 日期时间，后面可跟一对括号指定时间格式，比如%%d{%%Y-%%m-%%d %%H:%%M:%%S}，这里的格式字符与C语言strftime一致
+     * - %r 该日志器创建后的累计运行毫秒数
+     * - %f 文件名
+     * - %l 行号
+     * - %t 线程id
+     * - %F 协程id
+     * - %N 线程名称
+     * - %% 百分号
+     * - %T 制表符
+     * - %n 换行
+     * 
+     * 默认格式：%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n
+     * 
+     * 默认格式描述：年-月-日 时:分:秒 [累计运行毫秒数] \\t 线程id \\t 线程名称 \\t 协程id \\t [日志级别] \\t [日志器名称] \\t 文件名:行号 \\t 日志消息 换行符
+     */
+    LogFormatter(const std::string &pattern = "%d{%Y-%m-%d %H:%M:%S} [%rms]%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n");
+    //初始化，解析格式模板，提取模板项
+    void init();
+    bool isError() const { return m_error; }
+    //对日志事件进行格式化，返回格式化日志文本
+    std::string format(LogEvent::ptr event);
+
+    //对日志事件进行格式化，返回格式化日志流
+    std::ostream &format(std::ostream &os, LogEvent::ptr event);
+    std::string getPattern() const { return m_pattern; }
+
+public:
+    //日志内容格式化项，虚基类，用于派生出不同的格式化项
+    class FormatItem {
+    public:
+        typedef std::shared_ptr<FormatItem> ptr;
+        
+        virtual ~FormatItem() {}
+        virtual void format(std::ostream &os, LogEvent::ptr event) = 0;
+    };
+
+private:  
+    std::string m_pattern;                      // 日志格式模板  
+    std::vector<FormatItem::ptr> m_items;       // 解析后的格式模板数组  
+    bool m_error = false;                       // 是否出错
 };
 
 /**
@@ -165,5 +227,44 @@ private:
     std::list<LogAppender::ptr> m_appenders;    // LogAppender集合  
     uint64_t m_createTime;                      // 日志器创建时间
 };
+
+/**
+ * @brief 日志事件包装器，方便宏定义，内部包含日志事件和日志器
+ */
+class LogEventWrap{
+public:
+    LogEventWrap(Logger::ptr logger, LogEvent::ptr event);
+    //日志事件在析构时由日志器进行输出
+    ~LogEventWrap();
+
+    LogEvent::ptr getLogEvent() const { return m_event; }
+
+private:  
+    Logger::ptr m_logger;       // 日志器   
+    LogEvent::ptr m_event;      // 日志事件
+};
+
+/**
+ * @brief 日志器管理类
+ */
+class LoggerManager{
+public:
+    typedef Spinlock MutexType;
+
+    LoggerManager();
+    //初始化，主要是结合配置模块实现日志模块初始化
+    void init();
+    //获取指定名称的日志器
+    Logger::ptr getLogger(const std::string &name);
+    Logger::ptr getRoot() { return m_root; }
+
+private:
+    MutexType m_mutex; 
+    std::map<std::string, Logger::ptr> m_loggers;       // 日志器集合  
+    Logger::ptr m_root;                                 // root日志器
+};
+
+/// 日志器管理类单例
+typedef Singleton<LoggerManager> LoggerMgr;
 
 #endif
