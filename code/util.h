@@ -14,4 +14,8 @@ pid_t GetThreadId();
  */
 uint64_t GetElapsedMS();
 
+uint64_t GetFiberId();
+
+std::string GetThreadName();
+
 #endif

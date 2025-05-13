@@ -21,6 +21,24 @@
 #include "mutex.h"
 #include "singleton.h"
 
+//获取root日志器
+#define LOG_ROOT() LoggerMgr::GetInstance()->getRoot()
+
+//获取指定名称的日志器
+#define LOG_NAME(name) LoggerMgr::GetInstance()->getLogger(name)
+
+#define LOG_LEVEL(logger , level) \
+    if(level <= logger->getLevel()) \
+        LogEventWrap(logger, LogEvent::ptr(new LogEvent(logger->getName(), \
+            level, __FILE__, __LINE__, GetElapsedMS() - logger->getCreateTime(), \
+            GetThreadId(), GetFiberId(), time(0), GetThreadName()))).getLogEvent()->getSS()
+
+#define LOG_FATAL(logger) LOG_LEVEL(logger, LogLevel::FATAL)
+#define LOG_ERROR(logger) LOG_LEVEL(logger, LogLevel::ERROR)
+#define LOG_WARN(logger) LOG_LEVEL(logger, LogLevel::WARN)
+#define LOG_INFO(logger) LOG_LEVEL(logger, LogLevel::INFO)
+#define LOG_DEBUG(logger) LOG_LEVEL(logger, LogLevel::DEBUG)
+
 /**
  * @brief 日志级别
  */
