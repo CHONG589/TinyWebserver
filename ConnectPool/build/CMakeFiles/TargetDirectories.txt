@@ -1,0 +1,3 @@
+/home/zch/Project/TinyWebserver/ConnectPool/build/CMakeFiles/rebuild_cache.dir
+/home/zch/Project/TinyWebserver/ConnectPool/build/CMakeFiles/edit_cache.dir
+/home/zch/Project/TinyWebserver/ConnectPool/build/CMakeFiles/ConnectionPool.dir
