@@ -15,3 +15,5 @@
 
 ./server
 ./log/
+./build/
+./ConnectPool/build/

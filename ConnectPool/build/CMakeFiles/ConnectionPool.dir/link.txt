@@ -1,1 +1,0 @@
-/usr/bin/c++   -pthread   CMakeFiles/ConnectionPool.dir/main.cpp.o CMakeFiles/ConnectionPool.dir/src/Connection.cpp.o CMakeFiles/ConnectionPool.dir/src/ConnectionPool.cpp.o  -o ConnectionPool  -lmysqlclient 
