@@ -15,12 +15,14 @@ add_subdirectory(zchlog)
 
 # 定义测试可执行文件与源文件
 add_executable(test_fiber
-    test/scheduler_test.cpp
+    test/iomanager_test.cpp
     code/coroutine/thread.cpp
     code/coroutine/fiber.cpp
     code/coroutine/scheduler.cpp
+    code/coroutine/iomanager.cpp
     code/mutex.cpp
     code/util.cpp
+    code/coroutine/timer.cpp
 )
 
 # 链接 zchlog 与线程库

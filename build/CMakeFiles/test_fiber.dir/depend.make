@@ -20,6 +20,27 @@ CMakeFiles/test_fiber.dir/code/coroutine/fiber.cpp.o: ../code/mutex.h
 CMakeFiles/test_fiber.dir/code/coroutine/fiber.cpp.o: ../code/noncopyable.h
 CMakeFiles/test_fiber.dir/code/coroutine/fiber.cpp.o: ../code/util.h
 
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../zchlog/include/AsynLopper.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../zchlog/include/Buffer.hpp
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../zchlog/include/Formatter.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../zchlog/include/Log.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../zchlog/include/LogConfig.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../zchlog/include/LogLevel.hpp
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../zchlog/include/LogMsg.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../zchlog/include/LogSink.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../zchlog/include/Logger.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../zchlog/include/util.hpp
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../zchlog/include/zchlog.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../code/coroutine/fiber.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../code/coroutine/iomanager.cpp
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../code/coroutine/iomanager.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../code/coroutine/scheduler.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../code/coroutine/thread.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../code/coroutine/timer.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../code/mutex.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../code/noncopyable.h
+CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o: ../code/util.h
+
 CMakeFiles/test_fiber.dir/code/coroutine/scheduler.cpp.o: ../zchlog/include/AsynLopper.h
 CMakeFiles/test_fiber.dir/code/coroutine/scheduler.cpp.o: ../zchlog/include/Buffer.hpp
 CMakeFiles/test_fiber.dir/code/coroutine/scheduler.cpp.o: ../zchlog/include/Formatter.h
@@ -45,6 +66,12 @@ CMakeFiles/test_fiber.dir/code/coroutine/thread.cpp.o: ../code/mutex.h
 CMakeFiles/test_fiber.dir/code/coroutine/thread.cpp.o: ../code/noncopyable.h
 CMakeFiles/test_fiber.dir/code/coroutine/thread.cpp.o: ../code/util.h
 
+CMakeFiles/test_fiber.dir/code/coroutine/timer.cpp.o: ../code/coroutine/timer.cpp
+CMakeFiles/test_fiber.dir/code/coroutine/timer.cpp.o: ../code/coroutine/timer.h
+CMakeFiles/test_fiber.dir/code/coroutine/timer.cpp.o: ../code/mutex.h
+CMakeFiles/test_fiber.dir/code/coroutine/timer.cpp.o: ../code/noncopyable.h
+CMakeFiles/test_fiber.dir/code/coroutine/timer.cpp.o: ../code/util.h
+
 CMakeFiles/test_fiber.dir/code/mutex.cpp.o: ../code/mutex.cpp
 CMakeFiles/test_fiber.dir/code/mutex.cpp.o: ../code/mutex.h
 CMakeFiles/test_fiber.dir/code/mutex.cpp.o: ../code/noncopyable.h
@@ -52,22 +79,24 @@ CMakeFiles/test_fiber.dir/code/mutex.cpp.o: ../code/noncopyable.h
 CMakeFiles/test_fiber.dir/code/util.cpp.o: ../code/util.cpp
 CMakeFiles/test_fiber.dir/code/util.cpp.o: ../code/util.h
 
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../zchlog/include/AsynLopper.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../zchlog/include/Buffer.hpp
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../zchlog/include/Formatter.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../zchlog/include/Log.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../zchlog/include/LogConfig.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../zchlog/include/LogLevel.hpp
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../zchlog/include/LogMsg.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../zchlog/include/LogSink.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../zchlog/include/Logger.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../zchlog/include/util.hpp
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../zchlog/include/zchlog.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../code/coroutine/fiber.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../code/coroutine/scheduler.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../code/coroutine/thread.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../code/mutex.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../code/noncopyable.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../code/util.h
-CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o: ../test/scheduler_test.cpp
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../zchlog/include/AsynLopper.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../zchlog/include/Buffer.hpp
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../zchlog/include/Formatter.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../zchlog/include/Log.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../zchlog/include/LogConfig.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../zchlog/include/LogLevel.hpp
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../zchlog/include/LogMsg.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../zchlog/include/LogSink.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../zchlog/include/Logger.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../zchlog/include/util.hpp
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../zchlog/include/zchlog.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../code/coroutine/fiber.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../code/coroutine/iomanager.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../code/coroutine/scheduler.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../code/coroutine/thread.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../code/coroutine/timer.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../code/mutex.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../code/noncopyable.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../code/util.h
+CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o: ../test/iomanager_test.cpp
 

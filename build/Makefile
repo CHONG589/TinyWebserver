@@ -163,6 +163,33 @@ code/coroutine/fiber.cpp.s:
 	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/code/coroutine/fiber.cpp.s
 .PHONY : code/coroutine/fiber.cpp.s
 
+code/coroutine/iomanager.o: code/coroutine/iomanager.cpp.o
+
+.PHONY : code/coroutine/iomanager.o
+
+# target to build an object file
+code/coroutine/iomanager.cpp.o:
+	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.o
+.PHONY : code/coroutine/iomanager.cpp.o
+
+code/coroutine/iomanager.i: code/coroutine/iomanager.cpp.i
+
+.PHONY : code/coroutine/iomanager.i
+
+# target to preprocess a source file
+code/coroutine/iomanager.cpp.i:
+	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.i
+.PHONY : code/coroutine/iomanager.cpp.i
+
+code/coroutine/iomanager.s: code/coroutine/iomanager.cpp.s
+
+.PHONY : code/coroutine/iomanager.s
+
+# target to generate assembly for a file
+code/coroutine/iomanager.cpp.s:
+	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/code/coroutine/iomanager.cpp.s
+.PHONY : code/coroutine/iomanager.cpp.s
+
 code/coroutine/scheduler.o: code/coroutine/scheduler.cpp.o
 
 .PHONY : code/coroutine/scheduler.o
@@ -216,6 +243,33 @@ code/coroutine/thread.s: code/coroutine/thread.cpp.s
 code/coroutine/thread.cpp.s:
 	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/code/coroutine/thread.cpp.s
 .PHONY : code/coroutine/thread.cpp.s
+
+code/coroutine/timer.o: code/coroutine/timer.cpp.o
+
+.PHONY : code/coroutine/timer.o
+
+# target to build an object file
+code/coroutine/timer.cpp.o:
+	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/code/coroutine/timer.cpp.o
+.PHONY : code/coroutine/timer.cpp.o
+
+code/coroutine/timer.i: code/coroutine/timer.cpp.i
+
+.PHONY : code/coroutine/timer.i
+
+# target to preprocess a source file
+code/coroutine/timer.cpp.i:
+	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/code/coroutine/timer.cpp.i
+.PHONY : code/coroutine/timer.cpp.i
+
+code/coroutine/timer.s: code/coroutine/timer.cpp.s
+
+.PHONY : code/coroutine/timer.s
+
+# target to generate assembly for a file
+code/coroutine/timer.cpp.s:
+	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/code/coroutine/timer.cpp.s
+.PHONY : code/coroutine/timer.cpp.s
 
 code/mutex.o: code/mutex.cpp.o
 
@@ -271,32 +325,32 @@ code/util.cpp.s:
 	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/code/util.cpp.s
 .PHONY : code/util.cpp.s
 
-test/scheduler_test.o: test/scheduler_test.cpp.o
+test/iomanager_test.o: test/iomanager_test.cpp.o
 
-.PHONY : test/scheduler_test.o
+.PHONY : test/iomanager_test.o
 
 # target to build an object file
-test/scheduler_test.cpp.o:
-	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.o
-.PHONY : test/scheduler_test.cpp.o
+test/iomanager_test.cpp.o:
+	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.o
+.PHONY : test/iomanager_test.cpp.o
 
-test/scheduler_test.i: test/scheduler_test.cpp.i
+test/iomanager_test.i: test/iomanager_test.cpp.i
 
-.PHONY : test/scheduler_test.i
+.PHONY : test/iomanager_test.i
 
 # target to preprocess a source file
-test/scheduler_test.cpp.i:
-	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.i
-.PHONY : test/scheduler_test.cpp.i
+test/iomanager_test.cpp.i:
+	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.i
+.PHONY : test/iomanager_test.cpp.i
 
-test/scheduler_test.s: test/scheduler_test.cpp.s
+test/iomanager_test.s: test/iomanager_test.cpp.s
 
-.PHONY : test/scheduler_test.s
+.PHONY : test/iomanager_test.s
 
 # target to generate assembly for a file
-test/scheduler_test.cpp.s:
-	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/test/scheduler_test.cpp.s
-.PHONY : test/scheduler_test.cpp.s
+test/iomanager_test.cpp.s:
+	$(MAKE) -f CMakeFiles/test_fiber.dir/build.make CMakeFiles/test_fiber.dir/test/iomanager_test.cpp.s
+.PHONY : test/iomanager_test.cpp.s
 
 # Help Target
 help:
@@ -311,21 +365,27 @@ help:
 	@echo "... code/coroutine/fiber.o"
 	@echo "... code/coroutine/fiber.i"
 	@echo "... code/coroutine/fiber.s"
+	@echo "... code/coroutine/iomanager.o"
+	@echo "... code/coroutine/iomanager.i"
+	@echo "... code/coroutine/iomanager.s"
 	@echo "... code/coroutine/scheduler.o"
 	@echo "... code/coroutine/scheduler.i"
 	@echo "... code/coroutine/scheduler.s"
 	@echo "... code/coroutine/thread.o"
 	@echo "... code/coroutine/thread.i"
 	@echo "... code/coroutine/thread.s"
+	@echo "... code/coroutine/timer.o"
+	@echo "... code/coroutine/timer.i"
+	@echo "... code/coroutine/timer.s"
 	@echo "... code/mutex.o"
 	@echo "... code/mutex.i"
 	@echo "... code/mutex.s"
 	@echo "... code/util.o"
 	@echo "... code/util.i"
 	@echo "... code/util.s"
-	@echo "... test/scheduler_test.o"
-	@echo "... test/scheduler_test.i"
-	@echo "... test/scheduler_test.s"
+	@echo "... test/iomanager_test.o"
+	@echo "... test/iomanager_test.i"
+	@echo "... test/iomanager_test.s"
 .PHONY : help
 
 
