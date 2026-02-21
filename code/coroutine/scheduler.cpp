@@ -8,21 +8,32 @@ static thread_local Scheduler *t_scheduler = nullptr;
 // 当前线程的调度协程，每个线程都独有一份
 static thread_local Fiber *t_scheduler_fiber = nullptr;
 
+/**
+* @brief Construct a new Scheduler object
+* @param threads 线程数
+* @param use_caller 是否将当前线程也作为调度线程
+* @param name 调度器名字
+*/
 Scheduler::Scheduler(size_t threads, bool use_caller, const std::string &name) {
-    assert(threads > 0);
+
+    LOG_INFO() << "创建调度器，线程数：" << threads << ", use_caller: " << use_caller << ", schedule: " << name;
+
+    if(threads <= 0) {
+        LOG_WARN() << "Scheduler Construct param threads is <= 0!";
+        assert(false);
+    }
 
     m_useCaller = use_caller;
     m_name      = name;
 
     if (use_caller) {
         --threads;
-        //因为是首次创建，所以这里是创建主协程，直接调用GetThis() 
-        //会创建。
+        // 因为是首次创建，所以这里是创建主协程，直接调用 GetThis() 会创建。
         Fiber::GetThis();
         assert(GetThis() == nullptr);
         t_scheduler = this;
 
-        //main 线程的调度协程，调度协程没有栈空间和run_in_schedule 为 false
+        // main 线程的调度协程，调度协程没有栈空间和 run_in_schedule 为 false
         m_rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this), 0, false));
 
         Thread::SetName(m_name);
@@ -30,41 +41,54 @@ Scheduler::Scheduler(size_t threads, bool use_caller, const std::string &name) {
         m_rootThread      = GetThreadId();
         // 将线程 id 加入到线程池。
         m_threadIds.push_back(m_rootThread);
-    } 
-    else {
-        // 非caller线程的调度器，-1 表示不指定线程
+    } else {
+        // 非 caller 线程的调度器，-1 表示不指定线程
         m_rootThread = -1;
     }
     m_threadCount = threads;
 }
 
+/**
+* @brief Get the This object
+* @details 在执行调度任务时，还可以通过调度器的GetThis()方法获取到当前调度器， 
+* 再通过schedule方法继续添加新的任务，这就变相实现了在子协程中创建并,运行新的子协程的功能 
+* @return Scheduler* 
+*/
 Scheduler *Scheduler::GetThis() { 
     return t_scheduler; 
 }
 
+/**
+* @brief 获取当前线程的主协程
+* @return Fiber* 
+*/
 Fiber *Scheduler::GetMainFiber() { 
     return t_scheduler_fiber;
 }
 
-// 设置当前线程的调度器
+/**
+* @brief 设置当前的协程调度器
+*/
 void Scheduler::setThis() {
     t_scheduler = this;
 }
 
 Scheduler::~Scheduler() {
-    LOG_DEBUG("Scheduler::~Scheduler %s is deleting", m_name.c_str());
+    LOG_INFO() << "Scheduler::~Scheduler " << m_name.c_str() << " is deleting!";
     assert(m_stopping);
     if (GetThis() == this) {
         t_scheduler = nullptr;
     }
 }
 
-// 启动调度器，对调度器进行一些列的初始化（初始化线程池）。
+/**
+* @brief 启动调度器, 对调度器进行一些列的初始化（初始化线程池）。
+*/
 void Scheduler::start() {
-    LOG_DEBUG("Scheduler::start %s", m_name.c_str());
+    LOG_INFO() << "Scheduler::start " << m_name.c_str();
     MutexType::Lock lock(m_mutex);
     if (m_stopping) {
-        LOG_ERROR("Scheduler::start %s error", m_name);
+        LOG_WARN() << "Scheduler::start " << m_name << " error";
         return;
     }
     // 线程池是否为空
@@ -79,24 +103,38 @@ void Scheduler::start() {
     }
 }
 
+/**
+* @brief 判断该调度器是否可以停止
+* @return true 
+* @return false 
+*/
 bool Scheduler::stopping() {
     MutexType::Lock lock(m_mutex);
     return m_stopping && m_tasks.empty() && m_activeThreadCount == 0;
 }
 
+/**
+* @brief 通知协程调度器有任务了
+*/
 void Scheduler::tickle() { 
-    LOG_DEBUG("tickle scheduler..."); 
+    LOG_INFO() << "ticle scheduler...";
 }
 
+/**
+* @brief 空闲协程，没有任务是执行的协程
+*/
 void Scheduler::idle() {
-    LOG_DEBUG("Scheduler::idle...");
+    LOG_INFO() << "Scheduler::idle....";
     while (!stopping()) {
         Fiber::GetThis()->yield();
     }
 }
 
+/**
+* @brief 停止调度器，等所有调度任务都执行完了再返回
+*/
 void Scheduler::stop() {
-    LOG_DEBUG("Scheduler::stop...");
+    LOG_INFO() << "Scheduler::stop...";
     if (stopping()) {
         // 满足停止条件
         return ;
@@ -104,14 +142,13 @@ void Scheduler::stop() {
     // 标记停止状态
     m_stopping = true;
 
-    // 如果use caller，那只能由caller线程发起stop
+    // 如果 use caller，那只能由 caller 线程发起 stop
     if (m_useCaller) {
         // this表示当前调用stop()的线程，GetThis()表示获取
         // 创建该调度器的线程，即 main。判断是否相等。
         assert(GetThis() == this);
-    } 
-    else {
-        //只有当所有的调度线程都结束后，调度器才算真正停止
+    } else {
+        // 只有当所有的调度线程都结束后，调度器才算真正停止
         assert(GetThis() != this);
     }
 
@@ -128,7 +165,7 @@ void Scheduler::stop() {
     // 如果 caller 线程的调度协程存在，这里还要进行调度完，即切换到任务协程去消耗任务。
     if (m_rootFiber) {
         m_rootFiber->resume();
-        LOG_DEBUG("Scheduler::stop m_rootFiber end");
+        LOG_INFO() << "Scheduler::stop m_rootFiber end";
     }
 
     std::vector<Thread::ptr> thrs;
@@ -143,14 +180,17 @@ void Scheduler::stop() {
     }
 }
 
+/**
+* @brief 协程调度函数
+*/
 void Scheduler::run() {
-    LOG_DEBUG("Scheduler::run begin");
-    //运行到本调度器，设置当前线程的调度器。
+    LOG_DEBUG() << "Scheduler::run begin";
+    // 运行到本调度器，设置当前线程的调度器。
     setThis();
     if (GetThreadId() != m_rootThread) {
-        //这里相当于初始化t_scheduler_fiber，除了 main 线程的，
-        //其它的都要初始化，main 的已经在构造的时候已经初始化完成，
-        //其它的在这里才初始化
+        // 这里相当于初始化t_scheduler_fiber，除了 main 线程的，
+        // 其它的都要初始化，main 的已经在构造的时候已经初始化完成，
+        // 其它的在这里才初始化
         t_scheduler_fiber = Fiber::GetThis().get();
     }
 
@@ -205,34 +245,31 @@ void Scheduler::run() {
 
         if (task.fiber) {
             // resume协程，resume返回时，协程要么执行完了，要么半路yield了，
-            //总之这个任务就算完成了，活跃线程数减一
-            LOG_DEBUG("run fiber in scheduler");
+            // 总之这个任务就算完成了，活跃线程数减一
+            LOG_DEBUG() << "run fiber in scheduler";
             task.fiber->resume();
             --m_activeThreadCount;
             task.reset();
-        } 
-        else if (task.cb) {
+        } else if (task.cb) {
             // task 为回调函数，则创建新的协程，执行回调函数
             if (cb_fiber) {
                 // 因为任务 task 是以函数的形式传过来的，所以要创建成协程来执行，
                 // 又cb_fiber这个临时协程已经创建过了，所以复用一下这个协程。
                 cb_fiber->reset(task.cb);
-            } 
-            else {
+            } else {
                 // 临时协程没有被创建过，那就创建它。
                 cb_fiber.reset(new Fiber(task.cb));
             }
             task.reset();
-            LOG_DEBUG("run fun in scheduler");
+            LOG_DEBUG() << "run fun in scheduler";
             cb_fiber->resume();
             --m_activeThreadCount;
             cb_fiber.reset();
-        } 
-        else {
+        } else {
             // 进到这个分支情况一定是任务队列空了，调度idle协程即可
             if (idle_fiber->getState() == Fiber::TERM) {
                 // 如果 idle_fiber 已经终止了，说明调度器已经停止了，则退出循环。
-                LOG_DEBUG("Scheduler::run idle fiber term");
+                LOG_DEBUG() << "Scheduler::run idle fiber term";
                 break;
             }
             // 不是 TERM 状态的话，就会一直 resume 到 idle_fiber 协程，然后又在
@@ -242,5 +279,5 @@ void Scheduler::run() {
             --m_idleThreadCount;
         }
     }
-    LOG_DEBUG("Scheduler::run exit");
+    LOG_DEBUG() << "Scheduler::run exit";
 }

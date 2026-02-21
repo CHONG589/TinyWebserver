@@ -1,5 +1,5 @@
-#ifndef __SCHEDULER_H__
-#define __SCHEDULER_H__
+#ifndef SCHEDULER_H__
+#define SCHEDULER_H__
 
 #include <functional>
 #include <list>
@@ -7,16 +7,15 @@
 #include <string>
 
 #include "fiber.h"
-#include "../log/log.h"
 #include "thread.h"
+#include "zchlog.h"
 
-//实现协程调度之后，可以解决前一章协程模块中子协程不能运行另一个子协程的缺陷，
-//子协程可以通过向调度器添加调度任务的方式来运行另一个子协程。
+// 实现协程调度之后，可以解决前一章协程模块中子协程不能运行另一个子协程的缺陷，
+// 子协程可以通过向调度器添加调度任务的方式来运行另一个子协程。
 
 /**
  * @brief 协程调度器
- * @details 封装的是N-M的协程调度器
- *          内部有一个线程池,支持协程在线程池里面切换
+ * @details 封装的是N-M的协程调度器内部有一个线程池,支持协程在线程池里面切换
  */
 class Scheduler {
 public:
@@ -26,8 +25,8 @@ public:
     /**
      * @brief 添加调度任务
      * @tparam FiberOrCb 调度任务类型，可以是协程对象或函数指针
-     * @param[] fc 协程对象或指针
-     * @param[] thread 指定运行该任务的线程号，-1表示任意线程
+     * @param[in] fc 协程对象或指针
+     * @param[in] thread 指定运行该任务的线程号，-1表示任意线程
      */
     template <class FiberOrCb>
     void schedule(FiberOrCb fc, int thread = -1) {
@@ -42,38 +41,78 @@ public:
         }
     }
 
-    //threads 线程数, 
-    //use_caller 是否将当前线程也作为调度线程
+    /**
+     * @brief Construct a new Scheduler object
+     * @param threads 线程数
+     * @param use_caller 是否将当前线程也作为调度线程
+     * @param name 调度器名字
+     */
     Scheduler(size_t threads = 1, bool use_caller = true, const std::string &name = "Scheduler");
+
     virtual ~Scheduler();
+
     const std::string &getName() const { return m_name; }
-    //在执行调度任务时，还可以通过调度器的GetThis()方法获取到当前调度器，
-    //再通过schedule方法继续添加新的任务，这就变相实现了在子协程中创建并
-    //运行新的子协程的功能
+
+    /**
+     * @brief Get the This object
+     * @details 在执行调度任务时，还可以通过调度器的GetThis()方法获取到当前调度器， 
+     * 再通过schedule方法继续添加新的任务，这就变相实现了在子协程中创建并,运行新的子协程的功能 
+     * @return Scheduler* 
+     */
     static Scheduler *GetThis();
-    //获取当前线程的主协程
+
+    /**
+     * @brief 获取当前线程的主协程
+     * @return Fiber* 
+     */
     static Fiber *GetMainFiber();
-    //启动调度器
+
+    /**
+     * @brief 启动调度器, 对调度器进行一些列的初始化（初始化线程池）。
+     */
     void start();
-    //停止调度器，等所有调度任务都执行完了再返回
+
+    /**
+     * @brief 停止调度器，等所有调度任务都执行完了再返回
+     */
     void stop();
 
 protected:
-    //通知协程调度器有任务了
+    /**
+     * @brief 通知协程调度器有任务了
+     */
     virtual void tickle();
-    //协程调度函数
+
+    /**
+     * @brief 协程调度函数
+     */
     void run();
-    //无任务调度时执行idle协程
+
+    /**
+     * @brief 空闲协程，没有任务是执行的协程
+     */
     virtual void idle();
-    //返回是否可以停止
+
+    /**
+     * @brief 判断该调度器是否可以停止
+     * @return true 
+     * @return false 
+     */
     virtual bool stopping();
-    //设置当前的协程调度器
+
+    /**
+     * @brief 设置当前的协程调度器
+     */
     void setThis();
-    //返回是否有空闲线程
+
+    /**
+     * @brief 是否有空闲线程
+     * @return bool
+     */
     bool hasIdleThreads() { return m_idleThreadCount > 0; }
 
 private:
-    //调度任务，协程/函数二选一，可指定在哪个线程上调度
+    // 调度任务，协程/函数二选一，可指定在哪个线程上调度
     struct ScheduleTask {
         Fiber::ptr fiber;
         std::function<void()> cb;
@@ -136,10 +175,9 @@ private:
     std::atomic<size_t> m_activeThreadCount = {0};
     // idle线程数
     std::atomic<size_t> m_idleThreadCount = {0};
-
-    // 是否use caller
+    // 是否使用调度器所在线程作为调度协程
     bool m_useCaller;
-    // use_caller为true时，调度器所在线程的调度协程
+    // use_caller为 true 时，调度协程指针
     Fiber::ptr m_rootFiber;
     // use_caller为true时，调度器所在线程的id
     int m_rootThread = 0;

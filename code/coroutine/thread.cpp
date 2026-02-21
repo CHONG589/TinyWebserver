@@ -5,7 +5,6 @@
  * @date 2021-06-15
  */
 #include "thread.h"
-#include "../log/log.h"
 
 static thread_local Thread *t_thread          = nullptr;
 static thread_local std::string t_thread_name = "UNKNOW";

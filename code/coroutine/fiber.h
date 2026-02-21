@@ -7,14 +7,15 @@
 // ~all~top_positive~default-1-139480927-null-null.142%5Ev100%5Econtro
 // l&utm_term=%E5%8D%8F%E7%A8%8B&spm=1018.2226.3001.4187
 
-#ifndef __FIBER_H__
-#define __FIBER_H__
+#ifndef FIBER_H__
+#define FIBER_H__
 
 #include <functional>
 #include <memory>
 #include <ucontext.h>
 
 #include "thread.h"
+#include "zchlog.h"
 
 /**
  * @brief 协程类
@@ -23,33 +24,78 @@ class Fiber : public std::enable_shared_from_this<Fiber> {
 public:
     typedef std::shared_ptr<Fiber> ptr;
 
-    //协程状态
+    // 协程状态
     enum State { READY, RUNNING, TERM };
 
-    //cb 协程入口函数，stacksize 栈大小，
-    //run_in_scheduler 本协程是否参与调度器调度
-    Fiber(std::function<void()> cb, size_t stacksize = 0, 
-            bool run_in_scheduler = true);
+    /**
+     * @brief 构造函数
+     * @param[in] cb 协程入口函数
+     * @param[in] stacksize 栈大小
+     * @param[in] run_in_scheduler 本协程是否参与调度器调度
+     @ @author zch
+     */ 
+    Fiber(std::function<void()> cb, size_t stacksize = 0, bool run_in_scheduler = true);
 
+    /**
+     * @brief 析构函数，线程的主协程析构时需要特殊处理，因为主协程没有分配栈和 cb
+     @ @author zch
+     */
     ~Fiber();
-    //重置协程状态和入口函数，复用栈空间，不重新创建栈
+
+    /**
+     * @brief 获取当前协程，同时充当初始化当前线程主协程的作用，这个函数在使用协程之前要调用一下
+     @ @author zch
+     */ 
+    static Fiber::ptr GetThis();
+
+    /**
+     * @brief 重置协程状态和入口函数，复用栈空间，不重新创建栈
+     * @param[in] cb 协程入口函数
+     @ @author zch
+     */
     void reset(std::function<void()> cb);
+
+    /**
+     * @brief 恢复协程运行
+     @ @author zch
+     */
     void resume();
+
+    /**
+     * @brief 暂停当前协程运行，切换到主协程运行
+     @ @author zch
+     */
     void yield();
+
     uint64_t getId() const { return m_id; }
+
     State getState() const { return m_state; }
 
-    //设置当前正在运行的协程，即设置线程局部变量t_fiber的值
-    static void SetThis(Fiber *f);
-    static Fiber::ptr GetThis();
-    static uint64_t TotalFibers();
-    //协程入口函数
+    /**
+     * @brief 协程入口函数，所有协程都是从这里开始执行的
+     @ @author zch
+     */
     static void MainFunc();
+
+    /**
+     * @brief 设置当前正在运行的协程，即设置线程局部变量t_fiber的值
+     * @param[in] f 要设置为当前正在运行的协程的指针
+     @ @author zch
+     */
+    static void SetThis(Fiber *f);
+
+    /**
+    * @brief 获取当前协程 id
+    @ @author zch
+    */
     static uint64_t GetFiberId();
 
 private:
-    //无参构造函数只用于创建线程的第一个协程，也就是线程主函数对应的协程
-    //主协程没有分配栈和cb
+    /**
+     * @brief 无参构造函数，只用于创建线程的第一个协程，也就是线程主函数对应的协程
+     * @note 只能由 GetThis() 调用，创建线程的第一个协程，也就是线程主函数对应的
+     * @author zch
+     */
     Fiber();
 
 private:
