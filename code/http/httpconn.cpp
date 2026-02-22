@@ -17,6 +17,11 @@ HttpConn::~HttpConn() {
     Close(); 
 };
 
+/**
+* @brief 初始化 HttpConn 对象
+* @param[in] sockFd 套接字文件描述符
+* @param[in] addr 客户端地址信息
+*/
 void HttpConn::init(int fd, const sockaddr_in& addr) {
     assert(fd > 0);
     userCount++;
@@ -25,35 +30,59 @@ void HttpConn::init(int fd, const sockaddr_in& addr) {
     writeBuff_.RetrieveAll();
     readBuff_.RetrieveAll();
     isClose_ = false;
-    LOG_INFO("Client[%d](%s:%d) in, userCount:%d", fd_, GetIP(), GetPort(), (int)userCount);
+    LOG_INFO() << "Client[" << fd_ << "]" << " in, userCount:" << userCount;
 }
 
+/**
+* @brief 关闭连接
+*/
 void HttpConn::Close() {
     response_.UnmapFile();
     if(isClose_ == false){
         isClose_ = true; 
         userCount--;
         close(fd_);
-        LOG_INFO("Client[%d](%s:%d) quit, UserCount:%d", fd_, GetIP(), GetPort(), (int)userCount);
+        LOG_INFO() << "Client[" << fd_ << "]" << " quit, UserCount:" << userCount;
     }
 }
 
+/**
+* @brief 获取文件描述符
+* @return 文件描述符
+*/
 int HttpConn::GetFd() const {
     return fd_;
 };
 
+/**
+* @brief 获取客户端地址信息
+* @return sockaddr_in 客户端地址信息
+*/
 struct sockaddr_in HttpConn::GetAddr() const {
     return addr_;
 }
 
+/**
+* @brief 获取 IP 地址
+* @return const char* IP 地址
+*/
 const char* HttpConn::GetIP() const {
     return inet_ntoa(addr_.sin_addr);
 }
 
+/**
+* @brief 获取端口号
+* @return 端口号
+*/
 int HttpConn::GetPort() const {
     return addr_.sin_port;
 }
 
+/**
+ * @brief 从客户端中读取数据，即从套接字读取
+ * @param[in] saveErrno 错误码
+ * @return ssize_t 读取的字节数
+ */
 ssize_t HttpConn::read(int* saveErrno) {
     ssize_t len = -1;
     do {
@@ -65,7 +94,11 @@ ssize_t HttpConn::read(int* saveErrno) {
     return len;
 }
 
-// 主要采用writev连续写函数
+/**
+ * @brief 制作好的响应报文写入客户端，即写进套接字
+ * @param[in] saveErrno 错误码
+ * @return ssize_t 写入的字节数
+ */
 ssize_t HttpConn::write(int* saveErrno) {
     ssize_t len = -1;
     int remainLen;
@@ -104,7 +137,10 @@ ssize_t HttpConn::write(int* saveErrno) {
     return len;
 }
 
-// 
+/**
+ * @brief 处理 HTTP 请求
+ * @return bool 处理是否成功
+ */
 bool HttpConn::process() {
     request_.Init();
     if(readBuff_.ReadableBytes() <= 0) {

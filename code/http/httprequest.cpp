@@ -12,7 +12,9 @@ const unordered_map<string, int> HttpRequest::DEFAULT_HTML_TAG {
     {"/login.html", 1}, {"/register.html", 0}
 };
 
-// 初始化操作，一些清零操作
+/**
+ * @brief 初始化 HttpRequest 对象
+ */
 void HttpRequest::Init() {
     state_ = REQUEST_LINE;  // 初始状态
     method_ = path_ = version_= body_ = "";
@@ -20,7 +22,11 @@ void HttpRequest::Init() {
     post_.clear();
 }
 
-// 解析处理
+/**
+ * @brief 解析 HTTP 请求
+ * @param[in] buff 读缓冲区
+ * @return bool 解析是否成功
+ */
 bool HttpRequest::parse(Buffer& buff) {
     const char END[] = "\r\n";
     if(buff.ReadableBytes() == 0)   // 没有可读的字节
@@ -68,6 +74,11 @@ bool HttpRequest::parse(Buffer& buff) {
     return true;
 }
 
+/**
+ * @brief 解析请求行
+ * @param[in] line 请求行字符串
+ * @return bool 解析是否成功
+ */
 bool HttpRequest::ParseRequestLine_(const string& line) {
     //([^ ]*):表示任意除了空格外的元素
     regex patten("^([^ ]*) ([^ ]*) HTTP/([^ ]*)$");
@@ -83,11 +94,13 @@ bool HttpRequest::ParseRequestLine_(const string& line) {
         state_ = HEADERS;
         return true;
     }
-    LOG_ERROR("RequestLine Error");
+    LOG_ERROR() << "RequestLine Error";
     return false;
 }
 
-// 解析路径，统一一下path名称,方便后面解析资源
+/**
+ * @brief 处理请求路径
+ */
 void HttpRequest::ParsePath_() {
     if(path_ == "/") {
         //请求的是根目录，那么给它一个 index.html
@@ -101,7 +114,10 @@ void HttpRequest::ParsePath_() {
     }
 }
 
-//header中的都是类似 key: value 的类型
+/**
+ * @brief 解析请求头
+ * @param[in] line 请求头字符串
+ */
 void HttpRequest::ParseHeader_(const string& line) {
     //第一组([^:]*)：表示所有非冒号的字符，即类型
     //然后后面紧跟一个冒号，
@@ -120,11 +136,15 @@ void HttpRequest::ParseHeader_(const string& line) {
     }
 }
 
-//从url中解析编码
-//如：http://localhost/index.html?key1=value1&key2=value2
+/**
+ * @brief 从 urlencoded 格式中解析参数
+ */
 void HttpRequest::ParseFromUrlencoded_() {
-    if(body_.size() == 0) return ; 
+    // 从url中解析编码
+    // 如：http://localhost/index.html?key1=value1&key2=value2
 
+    if(body_.size() == 0) return ; 
+    
     string key, value;
     int num = 0;
     int n = body_.size();
@@ -152,7 +172,7 @@ void HttpRequest::ParseFromUrlencoded_() {
             value = body_.substr(j, i - j);
             j = i + 1;
             post_[key] = value;
-            LOG_DEBUG("%s = %s", key.c_str(), value.c_str());
+            LOG_DEBUG() << key << " = " << value;
             break;
         default:
             break;
@@ -165,7 +185,9 @@ void HttpRequest::ParseFromUrlencoded_() {
     }
 }
 
-// 处理post请求
+/**
+ * @brief 处理 Post 请求
+ */
 void HttpRequest::ParsePost_() {
     if(method_ == "POST" && header_["Content-Type"] == "application/x-www-form-urlencoded") {
         // 从url中解析编码
@@ -173,7 +195,7 @@ void HttpRequest::ParsePost_() {
         if(DEFAULT_HTML_TAG.count(path_)) { 
             // 如果是登录/注册的path
             int tag = DEFAULT_HTML_TAG.find(path_)->second; 
-            LOG_DEBUG("Tag:%d", tag);
+            LOG_DEBUG() << "Tag:" << tag;
             if(tag == 0 || tag == 1) {
                 bool isLogin = (tag == 1);  // 为1则是登录
                 if(UserVerify(post_["username"], post_["password"], isLogin)) {
@@ -187,17 +209,24 @@ void HttpRequest::ParsePost_() {
     }   
 }
 
+/**
+ * @brief 解析请求体
+ * @param[in] line 请求体字符串
+ */
 void HttpRequest::ParseBody_(const string& line) {
     body_ = line;
     //因为有 body，所以是 post请求，会更改服务器中的数据，这里
     //用另外一个函数来处理。
     ParsePost_();
     state_ = FINISH;    // 状态转换为下一个状态
-    LOG_DEBUG("Body:%s, len:%d", line.c_str(), line.size());
+    LOG_DEBUG() << "Body:" << line << ", len:" << line.size();
 }
 
-
-// 16进制转化为10进制
+/**
+ * @brief 16进制转换为10进制
+ * @param[in] ch 16进制字符
+ * @return int 10进制数值
+ */
 int HttpRequest::ConverHex(char ch) {
     if(ch >= 'A' && ch <= 'F') 
         return ch -'A' + 10;
@@ -206,9 +235,16 @@ int HttpRequest::ConverHex(char ch) {
     return ch;
 }
 
+/**
+ * @brief 用户验证
+ * @param[in] name 用户名
+ * @param[in] pwd 密码
+ * @param[in] isLogin 是否为登录操作
+ * @return bool 验证是否通过
+ */
 bool HttpRequest::UserVerify(const string &name, const string &pwd, bool isLogin) {
     if(name == "" || pwd == "") { return false; }
-    LOG_INFO("Verify name:%s pwd:%s", name.c_str(), pwd.c_str());
+    LOG_INFO() << "Verify name:" << name << " pwd:" << pwd;
     MYSQL* sql;
     SqlConnRAII(&sql, SqlConnPool::Instance());
     assert(sql);
@@ -222,7 +258,7 @@ bool HttpRequest::UserVerify(const string &name, const string &pwd, bool isLogin
     if(!isLogin) { flag = true; }
     /* 查询用户及密码 */
     snprintf(order, 256, "SELECT username, password FROM user WHERE username='%s' LIMIT 1", name.c_str());
-    LOG_DEBUG("%s", order);
+    LOG_DEBUG() << order;
 
     if(mysql_query(sql, order)) { 
         mysql_free_result(res);
@@ -233,40 +269,44 @@ bool HttpRequest::UserVerify(const string &name, const string &pwd, bool isLogin
     fields = mysql_fetch_fields(res);
 
     while(MYSQL_ROW row = mysql_fetch_row(res)) {
-        LOG_DEBUG("MYSQL ROW: %s %s", row[0], row[1]);
+        LOG_DEBUG() << "MYSQL ROW: " << row[0] << " " << row[1];
         string password(row[1]);
         /* 注册行为且用户名未被使用*/
         if(isLogin) {
             if(pwd == password) { flag = true; }
             else {
                 flag = false;
-                LOG_INFO("pwd error!");
+                LOG_INFO() << "pwd error!";
             }
         } 
         else { 
             flag = false; 
-            LOG_INFO("user used!");
+            LOG_INFO() << "user used!";
         }
     }
     mysql_free_result(res);
 
     /* 注册行为 且 用户名未被使用*/
     if(!isLogin && flag == true) {
-        LOG_DEBUG("regirster!");
+        LOG_DEBUG() << "regirster!";
         bzero(order, 256);
         snprintf(order, 256,"INSERT INTO user(username, password) VALUES('%s','%s')", name.c_str(), pwd.c_str());
-        LOG_DEBUG( "%s", order);
+        LOG_DEBUG() << order;
         if(mysql_query(sql, order)) { 
-            LOG_DEBUG( "Insert error!");
+            LOG_DEBUG() << "Insert error!";
             flag = false; 
         }
         flag = true;
     }
     // SqlConnPool::Instance()->FreeConn(sql);
-    LOG_DEBUG( "UserVerify success!!");
+    LOG_DEBUG() << "UserVerify success!!";
     return flag;
 }
 
+/**
+ * @brief 获取请求路径
+ * @return std::string 请求路径
+ */
 std::string HttpRequest::path() const{
     return path_;
 }
@@ -274,14 +314,28 @@ std::string HttpRequest::path() const{
 std::string& HttpRequest::path(){
     return path_;
 }
+
+/**
+ * @brief 获取请求方法
+ * @return std::string 请求方法
+ */
 std::string HttpRequest::method() const {
     return method_;
 }
 
+/**
+ * @brief 获取 HTTP 版本
+ * @return std::string HTTP 版本
+ */
 std::string HttpRequest::version() const {
     return version_;
 }
 
+/**
+ * @brief 获取 POST 请求参数
+ * @param[in] key 参数名
+ * @return std::string 参数值
+ */
 std::string HttpRequest::GetPost(const std::string& key) const {
     assert(key != "");
     if(post_.count(key) == 1) {
@@ -298,6 +352,10 @@ std::string HttpRequest::GetPost(const char* key) const {
     return "";
 }
 
+/**
+ * @brief 判断是否保持连接
+ * @return bool 是否保持连接
+ */
 bool HttpRequest::IsKeepAlive() const {
     if(header_.count("Connection") == 1) {
         return header_.find("Connection")->second == "keep-alive" && version_ == "1.1";

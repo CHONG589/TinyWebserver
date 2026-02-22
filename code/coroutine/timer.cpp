@@ -5,7 +5,7 @@ bool Timer::cancel() {
     TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);
     if(m_cb) {
         m_cb = nullptr;
-        //从小根堆中删除这个节点。
+        // 从小根堆中删除这个节点。
         auto it = m_manager->m_timers.find(shared_from_this());
         m_manager->m_timers.erase(it);
         return true;
@@ -23,7 +23,7 @@ bool Timer::refresh() {
         return false;
     }
     m_manager->m_timers.erase(it);
-    //删除要刷新的节点后，设置好时间后重新插入到小根堆中
+    // 删除要刷新的节点后，设置好时间后重新插入到小根堆中
     m_next = GetElapsedMS() + m_ms;
     m_manager->m_timers.insert(shared_from_this());
     return true;
@@ -46,10 +46,10 @@ bool Timer::reset(uint64_t ms, bool from_now) {
     if(from_now) {
         start = GetElapsedMS();
     } else {
-        //这里可能是因为有一个构造函数是直接以最终执行时间
-        //m_next 为参数直接构造的，所以这里需要判断是否是
-        //从当前时间开始计算的，是的话就start等于当前时间，
-        //不是时 start 等于最终执行时间减去 m_ms 才开始计算。
+        // 这里可能是因为有一个构造函数是直接以最终执行时间
+        // m_next 为参数直接构造的，所以这里需要判断是否是
+        // 从当前时间开始计算的，是的话就start等于当前时间，
+        // 不是时 start 等于最终执行时间减去 m_ms 才开始计算。
         start = m_next - m_ms;
     }
     m_ms = ms;
@@ -156,35 +156,35 @@ void TimerManager::listExpiredCb(std::vector<std::function<void()> >& cbs) {
         rollover = true;
     }
     if(!rollover && ((*m_timers.begin())->m_next > now_ms)) {
-        //全部都没超时，所以不需要处理
+        // 全部都没超时，所以不需要处理
         return;
     }
 
     Timer::ptr now_timer(new Timer(now_ms));
-    //将it 指向第一个没超时的下标节点，即第一个 next_timer->m_next >= now_ms
+    // 将it 指向第一个没超时的下标节点，即第一个 next_timer->m_next >= now_ms
     auto it = rollover ? m_timers.end() : m_timers.lower_bound(now_timer);
-    //而其实next_timer == now_timer 也算是超时了的，而且它只是指向了第一个相等
-    //的节点，后面可能还有多个，所以如果后面还有相等的，也要包括进去。
+    // 而其实next_timer == now_timer 也算是超时了的，而且它只是指向了第一个相等
+    // 的节点，后面可能还有多个，所以如果后面还有相等的，也要包括进去。
     while(it != m_timers.end() && (*it)->m_next == now_ms) {
         ++it;
     }
-    //将m_timers到it之间的节点加入到expired中。
+    // 将m_timers到it之间的节点加入到expired中。
     expired.insert(expired.begin(), m_timers.begin(), it);
     m_timers.erase(m_timers.begin(), it);
 
-    //上面已经将超时的节点已经找出来了，下面只需将回调函数提取
-    //出来。
-    //传过来接收的cbs是一个指针，所以要为它分配空间，大小即为
-    //expired.size()。
+    // 上面已经将超时的节点已经找出来了，下面只需将回调函数提取
+    // 出来。
+    // 传过来接收的cbs是一个指针，所以要为它分配空间，大小即为
+    // expired.size()。
     cbs.reserve(expired.size());
 
     for(auto& timer : expired) {
         cbs.push_back(timer->m_cb);
         if(timer->m_recurring) {
-            //如果是循环定时器，因为该定时器已经超时，这时
-            //需要重新设置超时时间
+            // 如果是循环定时器，因为该定时器已经超时，这时
+            // 需要重新设置超时时间
             timer->m_next = now_ms + timer->m_ms;
-            //重复利用这个Timer，而不是直接销毁。
+            // 重复利用这个Timer，而不是直接销毁。
             m_timers.insert(timer);
         } else {
             timer->m_cb = nullptr;
@@ -198,14 +198,14 @@ bool TimerManager::hasTimer() {
 }
 
 void TimerManager::addTimer(Timer::ptr val, RWMutexType::WriteLock& lock) {
-    //这句话的意思是将 val 插入到 m_timers 中，插入完后，
-    //因为这时是属于一个整体，即 m_timers，而 it 是要获取
-    //定时器节点，而它处于 set 的first 位置，所以要 .first
-    //取出。
+    // 这句话的意思是将 val 插入到 m_timers 中，插入完后，
+    // 因为这时是属于一个整体，即 m_timers，而 it 是要获取
+    // 定时器节点，而它处于 set 的first 位置，所以要 .first
+    // 取出。
     auto it = m_timers.insert(val).first;
-    //因为插入前第一个节点（最小的超时时间）还没过期，从 !m_tickled 
-    //可知还没过期，但是现在你插入后，比最小的还小，说明要更新定时器，
-    //因为你比它还早过期。所以at_front = true。
+    // 因为插入前第一个节点（最小的超时时间）还没过期，从 !m_tickled 
+    // 可知还没过期，但是现在你插入后，比最小的还小，说明要更新定时器，
+    // 因为你比它还早过期。所以at_front = true。
     bool at_front = (it == m_timers.begin()) && !m_tickled;
     if(at_front) {
         m_tickled = true;

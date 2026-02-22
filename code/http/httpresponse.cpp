@@ -49,6 +49,13 @@ HttpResponse::~HttpResponse() {
     UnmapFile();
 }
 
+/**
+ * @brief 初始化 HttpResponse 对象
+ * @param[in] srcDir 资源目录
+ * @param[in] path 请求路径
+ * @param[in] isKeepAlive 是否保持连接
+ * @param[in] code 状态码
+ */
 void HttpResponse::Init(const string& srcDir, string& path, bool isKeepAlive, int code){
     assert(srcDir != "");
     if(mmFile_) { UnmapFile(); }
@@ -60,12 +67,16 @@ void HttpResponse::Init(const string& srcDir, string& path, bool isKeepAlive, in
     mmFileStat_ = { 0 };
 }
 
+/**
+ * @brief 生成响应报文
+ * @param[in] buff 写入缓冲区
+ */
 void HttpResponse::MakeResponse(Buffer& buff) {
     /* 判断请求的资源文件 */
-    LOG_DEBUG("file path %s", (srcDir_ + path_).data());
+    LOG_DEBUG() << "file path " << (srcDir_ + path_);
     int ret = stat(((srcDir_ + path_).data()), &mmFileStat_);
     int flag = S_ISDIR(mmFileStat_.st_mode);
-    LOG_DEBUG("flag = %d, ret = %d", flag, ret);
+    LOG_DEBUG() << "flag = " << flag << ", ret = " << ret;
     if(ret < 0 || flag) {
         code_ = 404;
     }
@@ -82,14 +93,25 @@ void HttpResponse::MakeResponse(Buffer& buff) {
     AddContent_(buff);
 }
 
+/**
+ * @brief 获取映射内存的起始地址
+ * @return char* 映射内存的起始地址
+ */
 char* HttpResponse::File() {
     return mmFile_;
 }
 
+/**
+ * @brief 获取文件长度
+ * @return size_t 文件长度
+ */
 size_t HttpResponse::FileLen() const {
     return mmFileStat_.st_size;
 }
 
+/**
+ * @brief 处理错误 HTML
+ */
 void HttpResponse::ErrorHtml_() {
     //.count的用法：https://blog.csdn.net/weixin_64632836/article/details/127744751
     if(CODE_PATH.count(code_) == 1) {
@@ -98,6 +120,10 @@ void HttpResponse::ErrorHtml_() {
     }
 }
 
+/**
+ * @brief 添加状态行
+ * @param[in] buff 写入缓冲区
+ */
 void HttpResponse::AddStateLine_(Buffer& buff) {
     string status;
     if(CODE_STATUS.count(code_) == 1) {
@@ -110,6 +136,10 @@ void HttpResponse::AddStateLine_(Buffer& buff) {
     buff.Append("HTTP/1.1 " + to_string(code_) + " " + status + "\r\n");
 }
 
+/**
+ * @brief 添加响应头
+ * @param[in] buff 写入缓冲区
+ */
 void HttpResponse::AddHeader_(Buffer& buff) {
     buff.Append("Connection: ");
     if(isKeepAlive_) {
@@ -121,6 +151,10 @@ void HttpResponse::AddHeader_(Buffer& buff) {
     buff.Append("Content-type: " + GetFileType_() + "\r\n");
 }
 
+/**
+ * @brief 添加响应内容
+ * @param[in] buff 写入缓冲区
+ */
 void HttpResponse::AddContent_(Buffer& buff) {
     int srcFd = open((srcDir_ + path_).data(), O_RDONLY);
     if(srcFd < 0) { 
@@ -128,8 +162,8 @@ void HttpResponse::AddContent_(Buffer& buff) {
         return; 
     }
 
-    //将文件映射到内存提高文件的访问速度  MAP_PRIVATE 建立一个写入时拷贝的私有映射
-    LOG_INFO("file path %s", (srcDir_ + path_).data());
+    // 将文件映射到内存提高文件的访问速度  MAP_PRIVATE 建立一个写入时拷贝的私有映射
+    LOG_INFO() << "file path " << (srcDir_ + path_);
     int* mmRet = (int*)mmap(0, mmFileStat_.st_size, PROT_READ, MAP_PRIVATE, srcFd, 0);
     if(*mmRet == -1) {
         ErrorContent(buff, "File NotFound!");
@@ -140,6 +174,9 @@ void HttpResponse::AddContent_(Buffer& buff) {
     buff.Append("Content-length: " + to_string(mmFileStat_.st_size) + "\r\n\r\n");
 }
 
+/**
+ * @brief 解除文件映射
+ */
 void HttpResponse::UnmapFile() {
     if(mmFile_) {
         munmap(mmFile_, mmFileStat_.st_size);
@@ -147,7 +184,10 @@ void HttpResponse::UnmapFile() {
     }
 }
 
-// 判断文件类型 
+/**
+ * @brief 获取文件类型
+ * @return std::string 文件类型
+ */
 string HttpResponse::GetFileType_() {
     string::size_type idx = path_.find_last_of('.');
     if(idx == string::npos) {   // 最大值 find函数在找不到指定值得情况下会返回string::npos
@@ -160,6 +200,11 @@ string HttpResponse::GetFileType_() {
     return "text/plain";
 }
 
+/**
+ * @brief 生成错误内容
+ * @param[in] buff 写入缓冲区
+ * @param[in] message 错误信息
+ */
 void HttpResponse::ErrorContent(Buffer& buff, string message) {
     string body;
     string status;
