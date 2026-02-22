@@ -4,10 +4,10 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
-#include "../code/coroutine/fiber.h"
-#include "../code/coroutine/thread.h"
-#include "../code/coroutine/scheduler.h"
-#include "../code/coroutine/iomanager.h"
+#include "../include/coroutine/fiber.h"
+#include "../include/base/thread.h"
+#include "../include/coroutine/scheduler.h"
+#include "../include/coroutine/iomanager.h"
 #include "zchlog.h"
 
 int sockfd;
@@ -89,7 +89,7 @@ void test_iomanager() {
 int main(int argc, char *argv[]) {
 
     // 初始化日志系统 (加载配置文件)
-    zch::InitLogFromJson("/home/zch/Project/TinyWebserver/log_config.json");
+    zch::InitLogFromJson("/home/zch/Project/TinyWebserver/config/log_config.json");
     
     test_iomanager();
 

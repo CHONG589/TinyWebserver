@@ -1,6 +1,6 @@
-#include "../code/coroutine/fiber.h"
-#include "../code/coroutine/thread.h"
-#include "../code/coroutine/scheduler.h"
+#include "../include/coroutine/fiber.h"
+#include "../include/base/thread.h"
+#include "../include/coroutine/scheduler.h"
 #include "zchlog.h"
 
 /**
@@ -68,7 +68,7 @@ void test_fiber4() {
 int main() {
 
     // 初始化日志系统 (加载配置文件)
-    zch::InitLogFromJson("/home/zch/Project/TinyWebserver/log_config.json");
+    zch::InitLogFromJson("/home/zch/Project/TinyWebserver/config/log_config.json");
 
     LOG_INFO() << "main begin";
 

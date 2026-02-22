@@ -11,7 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package(Threads REQUIRED)
 
-add_subdirectory(zchlog)
+add_subdirectory(deps/zchlog)
 
 # 定义测试可执行文件与源文件
 add_executable(test_fiber
