@@ -114,14 +114,15 @@ private:
      */
     static bool UserVerify(const std::string& name, const std::string& pwd, bool isLogin);
 
+private:
+    static const std::unordered_set<std::string> DEFAULT_HTML;              // 默认网页
+    static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG;     // 默认网页标签
+
     PARSE_STATE state_;                                         // 解析状态
     std::string method_, path_, version_, body_;                // 请求方法，路径，版本，请求体
     std::unordered_map<std::string, std::string> header_;       // 请求头
     std::unordered_map<std::string, std::string> post_;         // POST 请求参数
 
-    static const std::unordered_set<std::string> DEFAULT_HTML;              // 默认网页
-    static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG;     // 默认网页标签
-    
     /**
      * @brief 16进制转换为10进制
      * @param[in] ch 16进制字符

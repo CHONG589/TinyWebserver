@@ -146,7 +146,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
 
     int rt = epoll_ctl(m_epfd, op, fd, &epevent);
     if (rt) {
-        LOG_WARN() << "IOManager::addEvent epoll_ctl add event False, fd = " << fd;
+        LOG_ERROR() << "IOManager::addEvent epoll_ctl add event False, fd = " << fd << " error=" << strerror(errno);
         return -1;
     }
     // setnonblocking(fd);

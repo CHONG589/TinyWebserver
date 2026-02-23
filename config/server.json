@@ -1,0 +1,9 @@
+{
+  "server": {
+    "ip": "0.0.0.0",
+    "port": 8000,
+    "resources_dir": "/home/zch/Project/TinyWebserver/resources",
+    "timeout": 120000,
+    "thread_num": 4
+  }
+}

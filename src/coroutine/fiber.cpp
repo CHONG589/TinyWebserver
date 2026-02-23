@@ -44,7 +44,7 @@ Fiber::Fiber() {
     ++s_fiber_count;
     m_id = s_fiber_id++;  // 协程 id 从 0 开始，用完加 1
 
-    LOG_INFO() << "Main fiber " << m_id << " created!";
+    LOG_DEBUG() << "Main fiber " << m_id << " created!";
 }
 
 /**
@@ -80,7 +80,7 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool run_in_scheduler)
     // 执行完后自动管理，而不是后面通过用户管理。
     makecontext(&m_ctx, &Fiber::MainFunc, 0);
 
-    LOG_INFO() << "Task fiber " << m_id << " created!";
+    LOG_DEBUG() << "Task fiber " << m_id << " created!";
 }
 
 /**
@@ -88,7 +88,7 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool run_in_scheduler)
 @ @author zch
 */
 Fiber::~Fiber() {
-    LOG_INFO() << "Fiber " << m_id << " destroyed!";
+    LOG_DEBUG() << "Fiber " << m_id << " destroyed!";
     --s_fiber_count;
     if (m_stack) {
         // 有栈，说明是子协程，需要确保子协程一定是结束状态

@@ -15,29 +15,21 @@ std::unordered_map<int, HttpConn> users_;
  * @param[in] accept_worker 接收连接调度器
  */
 HttpServer::HttpServer(bool keepalive
+                     , const std::string& resources_dir
                      , IOManager *worker
                      , IOManager *io_worker
                      , IOManager *accept_worker)
                      : TcpServer(io_worker, accept_worker)
                      , m_isKeepalive(keepalive) {
     
-    // 获取当前可执行文件路径的目录
-    char *srcDir = getcwd(nullptr, 256);
-    assert(srcDir);
-    std::string rootDir(srcDir);
-    
-    // 如果是在 bin 目录下运行，则资源目录在上一级
-    size_t pos = rootDir.find("/bin");
-    if (pos != std::string::npos) {
-        rootDir = rootDir.substr(0, pos);
-    }
-    
-    std::string resources = rootDir + "/resources";
+    // 使用传入的 resources_dir
+    std::string resources = resources_dir;
     
     // 分配内存并复制路径（注意：HttpConn::srcDir 是 const char*，需要持久的内存）
     // 这里简单处理，使用静态或堆分配。由于 HttpConn::srcDir 是静态指针，
     // 我们最好让它指向一个生命周期足够长的字符串。
-    static std::string staticSrcDir = resources;
+    static std::string staticSrcDir;
+    staticSrcDir = resources;
     
     LOG_INFO() << "srcDir: " << staticSrcDir;
     HttpConn::userCount = 0;
@@ -56,7 +48,7 @@ HttpServer::~HttpServer() {
  * @param[in] client 客户端Socket
  */
 void HttpServer::handleClient(Socket::ptr client) {
-    LOG_INFO() << "handleClient " << client->getSocket();
+    LOG_DEBUG() << "handleClient " << client->getSocket();
     // 简单实现：读取数据，处理请求，发送响应
     // 实际项目中这里应该是状态机循环
     int client_socket = client->getSocket();
@@ -72,7 +64,7 @@ void HttpServer::handleClient(Socket::ptr client) {
     // 1. 读取请求
     ssize_t readLen = users_[client_socket].read(&errnoNum);
     if(readLen <= 0 && errnoNum != EAGAIN) {
-        LOG_ERROR() << "read error, close client: " << client_socket;
+        LOG_ERROR() << "read error, close client: " << client_socket << " errno=" << errnoNum << " errstr=" << strerror(errnoNum);
         users_[client_socket].Close();
         return;
     }
@@ -106,8 +98,6 @@ void HttpServer::startAccept(Socket::ptr sock) {
             users_[client_socket].init(client_socket, *addr);
             
             m_ioWorker->schedule(std::bind(&HttpServer::handleClient, std::dynamic_pointer_cast<HttpServer>(shared_from_this()), client));
-        } else {
-            LOG_ERROR() << "accept errno=" << errno << " errstr=" << strerror(errno);
         }
     }
 }

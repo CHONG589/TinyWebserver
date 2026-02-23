@@ -42,6 +42,19 @@ int Address::getFamily() const {
     return getAddr()->sa_family;
 }
 
+/**
+ * @brief 返回可读性字符串
+ */
+std::string Address::toString() const {
+    std::stringstream ss;
+    insert(ss);
+    return ss.str();
+}
+
+/**
+ * @brief 比较操作符
+ */
+
 // IPAddress::ptr IPAddress::Create(const char *host, uint16_t port) {
 //
 // }

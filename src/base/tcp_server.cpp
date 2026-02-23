@@ -67,7 +67,7 @@ bool TcpServer::bind(const std::vector<Address::ptr> &addrs
     }
 
     for(auto &i : m_socks) {
-        LOG_DEBUG() << "type = " << m_type.data() << ", name = " << m_name.data() << ", server bind success";
+        LOG_INFO() << "type=" << m_type << " name=" << m_name << " server bind success: " << *i->getLocalAddress();
     }
     return true;
 }
@@ -109,7 +109,7 @@ void TcpServer::stop() {
  * @param[in] client 新连接的socket
  */
 void TcpServer::handleClient(Socket::ptr client) {
-    LOG_INFO() << "handle client";
+    LOG_DEBUG() << "handleClient: " << client->getSocket();
 }
 
 /**
@@ -122,8 +122,6 @@ void TcpServer::startAccept(Socket::ptr sock) {
         if(client) {
             client->setRecvTimeout(m_recvTimeout);
             m_ioWorker->schedule(std::bind(&TcpServer::handleClient, shared_from_this(), client));
-        } else {
-            LOG_ERROR() << "accept errno=" << errno << " errstr=" << strerror(errno);
         }
     }
 }

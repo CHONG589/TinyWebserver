@@ -29,7 +29,7 @@ void HttpConn::init(int fd, const sockaddr_in& addr) {
     writeBuff_.RetrieveAll();
     readBuff_.RetrieveAll();
     isClose_ = false;
-    LOG_INFO() << "Client[" << fd_ << "]" << " in, userCount:" << userCount;
+    LOG_DEBUG() << "Client[" << fd_ << "]" << " in, userCount:" << userCount;
 }
 
 /**
@@ -41,7 +41,7 @@ void HttpConn::Close() {
         isClose_ = true; 
         userCount--;
         close(fd_);
-        LOG_INFO() << "Client[" << fd_ << "]" << " quit, UserCount:" << userCount;
+        LOG_DEBUG() << "Client[" << fd_ << "]" << " quit, UserCount:" << userCount;
     }
 }
 

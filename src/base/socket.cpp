@@ -144,7 +144,7 @@ int64_t Socket::getSendTimeout() {
  */
 bool Socket::setOption(int level, int option, const void *result, socklen_t len) {
     if (setsockopt(m_sock, level, option, result, (socklen_t)len)) {
-        LOG_DEBUG() << "setOption() " << strerror(errno);
+        LOG_WARN() << "setOption(" << level << ", " << option << ") error: " << strerror(errno);
         return false;
     }
     return true;
@@ -162,7 +162,7 @@ bool Socket::setOption(int level, int option, const void *result, socklen_t len)
 bool Socket::getOption(int level, int option, void *result, socklen_t *len) {
     int rt = getsockopt(m_sock, level, option, result, (socklen_t *)len);
     if (rt) {
-        LOG_DEBUG() << "getOption() " << strerror(errno);
+        LOG_WARN() << "getOption(" << level << ", " << option << ") error: " << strerror(errno);
         return false;
     }
     return true;
@@ -221,7 +221,7 @@ bool Socket::bind(const Address::ptr addr) {
     }
 
     if(::bind(m_sock, addr->getAddr(), addr->getAddrLen())) {
-        LOG_ERROR() << "bind error: " << strerror(errno);
+        LOG_ERROR() << "bind error: " << strerror(errno) << " addr=" << addr->toString();
         return false;
     }
     //防止一开始传进来的addr为nullptr
@@ -250,7 +250,7 @@ bool Socket::connect(const Address::ptr addr, uint64_t timeout_ms) {
 
     if(timeout_ms == (uint64_t)-1) {
         if(::connect(m_sock, addr->getAddr(), addr->getAddrLen())) {
-            LOG_ERROR() << "connect error: " << strerror(errno);
+            LOG_ERROR() << "connect error: " << strerror(errno) << " addr=" << addr->toString();
             close();
             return false;
         }
@@ -293,7 +293,7 @@ bool Socket::listen(int backlog) {
         return false;
     }
     if(::listen(m_sock, backlog)) {
-        LOG_ERROR() << "listen error: " << strerror(errno);
+        LOG_ERROR() << "listen error: " << strerror(errno) << " backlog=" << backlog;
         return false;
     }
     return true;
@@ -307,7 +307,9 @@ Socket::ptr Socket::accept() {
     Socket::ptr sock(new Socket(m_family, m_type, m_protocol));
     int newsock = ::accept(m_sock, nullptr, nullptr);
     if(newsock == -1) {
-        LOG_ERROR() << "accept error: " << strerror(errno);
+        if(errno != EAGAIN && errno != EWOULDBLOCK) {
+            LOG_ERROR() << "accept error: " << strerror(errno) << " m_sock=" << m_sock;
+        }
         return nullptr;
     }
     if(sock->init(newsock)) {
@@ -504,9 +506,9 @@ Address::ptr Socket::getRemoteAddress() {
             break;
     }
     socklen_t addrlen = result->getAddrLen();
-    //此函数是获取远端的地址
+    // 此函数是获取远端的地址
     if(getpeername(m_sock, result->getAddr(), &addrlen)) {
-        LOG_ERROR() << "getpeername error: " << strerror(errno);
+        LOG_ERROR() << "getpeername error: " << strerror(errno) << " m_sock=" << m_sock;
         return Address::ptr(new UnknownAddress(m_family));
     }
     if (m_family == AF_UNIX) {
@@ -544,7 +546,7 @@ Address::ptr Socket::getLocalAddress() {
     socklen_t addrlen = result->getAddrLen();
     //此函数是获取本地地址
     if (getsockname(m_sock, result->getAddr(), &addrlen)) {
-        LOG_ERROR() << "getsockname error: " << strerror(errno);
+        LOG_ERROR() << "getsockname error: " << strerror(errno) << " m_sock=" << m_sock;
         return Address::ptr(new UnknownAddress(m_family));
     }
     if (m_family == AF_UNIX) {
