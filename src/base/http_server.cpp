@@ -7,6 +7,13 @@
 
 std::unordered_map<int, HttpConn> users_;
 
+/**
+ * @brief 构造函数
+ * @param[in] keepalive 是否保持连接
+ * @param[in] worker 工作调度器
+ * @param[in] io_worker IO调度器
+ * @param[in] accept_worker 接收连接调度器
+ */
 HttpServer::HttpServer(bool keepalive
                      , IOManager *worker
                      , IOManager *io_worker
@@ -37,10 +44,17 @@ HttpServer::HttpServer(bool keepalive
     HttpConn::srcDir = staticSrcDir.c_str();
 }
 
+/**
+ * @brief 析构函数
+ */
 HttpServer::~HttpServer() {
     
 }
 
+/**
+ * @brief 处理客户端连接
+ * @param[in] client 客户端Socket
+ */
 void HttpServer::handleClient(Socket::ptr client) {
     LOG_INFO() << "handleClient " << client->getSocket();
     // 简单实现：读取数据，处理请求，发送响应
@@ -77,6 +91,10 @@ void HttpServer::handleClient(Socket::ptr client) {
     // client->close();
 }
 
+/**
+ * @brief 开始接受连接
+ * @param[in] sock 服务器Socket
+ */
 void HttpServer::startAccept(Socket::ptr sock) {
     while(!m_isStop) {
         Socket::ptr client = sock->accept();

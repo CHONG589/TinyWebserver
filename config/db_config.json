@@ -3,7 +3,7 @@
   "port": 3306,
   "user": "root",
   "pwd": "589520",
-  "db": "yourdb",
+  "db": "testdb",
   "minSize": 100,
   "maxSize": 1024,
   "maxIdleTime": 5000,
