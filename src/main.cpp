@@ -1,0 +1,17 @@
+#include <unistd.h>
+
+#include "coroutine/iomanager.h"
+#include "base/address.h"
+
+void run() {
+    // Address::ptr addr = IPv4Address::Create("0.0.0.0", 6608);
+
+    // std::shared_ptr<HttpServer> server = std::make_shared<HttpServer>(true);
+    // while(!server->bind(addr));
+    // server->start();
+}
+
+int main() {
+    IOManager::ptr manager = std::make_shared<IOManager>(4, true);
+    manager->schedule(run);
+} 

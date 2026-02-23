@@ -1,0 +1,92 @@
+#include "base/tcp_server.h"
+#include "base/http_server.h"
+
+TcpServer::TcpServer(IOManager *io_worker, IOManager *accept_worker)
+    : m_ioWorker(io_worker)
+    , m_acceptWorker(accept_worker)
+    , m_recvTimeout((uint64_t)(60 * 1000 * 2))
+    , m_name("zch/1.0.0")
+    , m_type("tcp")
+    , m_isStop(true) {
+}
+
+TcpServer::~TcpServer() {
+    for (auto &i : m_socks) {
+        i->close();
+    }
+    m_socks.clear();
+}
+
+bool TcpServer::bind(Address::ptr addr) {
+    std::vector<Address::ptr> addrs;
+    std::vector<Address::ptr> fails;
+    addrs.push_back(addr);
+    return bind(addrs, fails);
+}
+
+bool TcpServer::bind(const std::vector<Address::ptr> &addrs
+                        , std::vector<Address::ptr> &fails) {
+    for(auto &addr : addrs) {
+        Socket::ptr sock = Socket::CreateTCP(addr);
+        if(!sock->bind(addr)) {
+            LOG_ERROR() << "bind fail errno = " << errno << ", errstr = " << strerror(errno);
+            fails.push_back(addr);
+            continue;
+        }
+        if(!sock->listen()) {
+            LOG_ERROR() << "listen fail errno = " << errno << ", errstr = " << strerror(errno);
+            fails.push_back(addr);
+            continue;
+        }
+        m_socks.push_back(sock);
+
+        // auto self = std::dynamic_pointer_cast<HttpServer>(shared_from_this());
+        // auto callback = std::bind(&HttpServer::startAccept, sock);
+        // m_acceptWorker->addEvent(sock->getSocket(), IOManager::READ, callback);
+        // LOG_INFO("add listen socket fd = %d", sock->getSocket());
+    }
+    if(!fails.empty()) {
+        m_socks.clear();
+        return false;
+    }
+
+    for(auto &i : m_socks) {
+        LOG_DEBUG() << "type = " << m_type.data() << ", name = " << m_name.data() << ", server bind success";
+    }
+    return true;
+}
+
+// bool TcpServer::start() {
+//     if(!m_isStop) {
+//         return true;
+//     }
+//     m_isStop = false;
+//     for(auto &i : m_socks) {
+//         // m_acceptWorker->schedule(std::bind(&HttpServer::startAccept, shared_from_this(), i));
+//         auto callback = std::bind(&HttpServer::startAccept, shared_from_this(), i);
+//         m_acceptWorker->addEvent(sock->getSocket(), IOManager::READ
+//             , callback);
+
+//     }
+//     return true;
+// }
+
+void TcpServer::stop() {
+    m_isStop = true;
+    auto self = shared_from_this();
+    m_acceptWorker->schedule([this, self]() {
+        for(auto& sock : m_socks) {
+            sock->cancelAll();
+            sock->close();
+        }
+        m_socks.clear();
+    });
+}
+
+void TcpServer::handleClient(Socket::ptr client) {
+    LOG_INFO() << "handle client";
+}
+
+void TcpServer::startAccept(Socket::ptr sock) {
+    
+}

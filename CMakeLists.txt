@@ -1,0 +1,66 @@
+cmake_minimum_required(VERSION 3.10)
+project(TinyWebServer)
+
+# 设置可执行文件输出目录到 bin
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
+# C++ 标准
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# 编译选项
+add_compile_options(-Wall -g -O2)
+
+# 线程库
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+find_package(Threads REQUIRED)
+
+# 查找 MySQL
+# find_package(MySQL REQUIRED) # 如果系统没有安装 standard mysql cmake module，可能需要手动指定路径
+# 或者直接链接 mysqlclient (假设库都在标准路径)
+
+# 包含头文件路径
+include_directories(
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/deps/zchlog  # zchlog 在 deps 目录
+)
+
+# 添加子目录
+add_subdirectory(deps/jsoncpp)
+add_subdirectory(deps/zchlog)
+
+# 收集源文件（排除 main.cpp 用于创建库）
+file(GLOB_RECURSE LIB_SRC_FILES
+    "src/base/*.cpp"
+    "src/coroutine/*.cpp"
+    "src/http/*.cpp"
+    "src/db/*.cpp"
+)
+
+# 创建核心库
+add_library(TinyWebServerLib STATIC ${LIB_SRC_FILES})
+target_link_libraries(TinyWebServerLib
+    PUBLIC
+    zchlog
+    jsoncpp_lib
+    Threads::Threads
+    mysqlclient
+)
+
+# 生成可执行文件
+add_executable(server src/main.cpp)
+
+# 链接库
+target_link_libraries(server
+    PRIVATE
+    TinyWebServerLib
+)
+
+# 是否要编译测试程序
+option(BUILD_TESTS "Build tests" OFF)
+
+# 添加测试子目录
+if(BUILD_TESTS)
+    add_subdirectory(test)
+endif()
