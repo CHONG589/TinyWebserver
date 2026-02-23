@@ -1,8 +1,6 @@
-#include "../../include/http/httpresponse.h"
+#include "http/httpresponse.h"
 
-using namespace std;
-
-const unordered_map<string, string> HttpResponse::SUFFIX_TYPE = {
+const std::unordered_map<std::string, std::string> HttpResponse::SUFFIX_TYPE = {
     { ".html",  "text/html" },
     { ".xml",   "text/xml" },
     { ".xhtml", "application/xhtml+xml" },
@@ -24,14 +22,14 @@ const unordered_map<string, string> HttpResponse::SUFFIX_TYPE = {
     { ".js",    "text/javascript "},
 };
 
-const unordered_map<int, string> HttpResponse::CODE_STATUS = {
+const std::unordered_map<int, std::string> HttpResponse::CODE_STATUS = {
     { 200, "OK" },
     { 400, "Bad Request" },
     { 403, "Forbidden" },
     { 404, "Not Found" },
 };
 
-const unordered_map<int, string> HttpResponse::CODE_PATH = {
+const std::unordered_map<int, std::string> HttpResponse::CODE_PATH = {
     { 400, "/400.html" },
     { 403, "/403.html" },
     { 404, "/404.html" },
@@ -56,7 +54,7 @@ HttpResponse::~HttpResponse() {
  * @param[in] isKeepAlive 是否保持连接
  * @param[in] code 状态码
  */
-void HttpResponse::Init(const string& srcDir, string& path, bool isKeepAlive, int code){
+void HttpResponse::Init(const std::string& srcDir, std::string& path, bool isKeepAlive, int code){
     assert(srcDir != "");
     if(mmFile_) { UnmapFile(); }
     code_ = code;
@@ -125,7 +123,7 @@ void HttpResponse::ErrorHtml_() {
  * @param[in] buff 写入缓冲区
  */
 void HttpResponse::AddStateLine_(Buffer& buff) {
-    string status;
+    std::string status;
     if(CODE_STATUS.count(code_) == 1) {
         status = CODE_STATUS.find(code_)->second;
     }
@@ -133,7 +131,7 @@ void HttpResponse::AddStateLine_(Buffer& buff) {
         code_ = 400;
         status = CODE_STATUS.find(400)->second;
     }
-    buff.Append("HTTP/1.1 " + to_string(code_) + " " + status + "\r\n");
+    buff.Append("HTTP/1.1 " + std::to_string(code_) + " " + status + "\r\n");
 }
 
 /**
@@ -171,7 +169,7 @@ void HttpResponse::AddContent_(Buffer& buff) {
     }
     mmFile_ = (char*)mmRet;
     close(srcFd);
-    buff.Append("Content-length: " + to_string(mmFileStat_.st_size) + "\r\n\r\n");
+    buff.Append("Content-length: " + std::to_string(mmFileStat_.st_size) + "\r\n\r\n");
 }
 
 /**
@@ -188,12 +186,12 @@ void HttpResponse::UnmapFile() {
  * @brief 获取文件类型
  * @return std::string 文件类型
  */
-string HttpResponse::GetFileType_() {
-    string::size_type idx = path_.find_last_of('.');
-    if(idx == string::npos) {   // 最大值 find函数在找不到指定值得情况下会返回string::npos
+std::string HttpResponse::GetFileType_() {
+    std::string::size_type idx = path_.find_last_of('.');
+    if(idx == std::string::npos) {   // 最大值 find函数在找不到指定值得情况下会返回string::npos
         return "text/plain";
     }
-    string suffix = path_.substr(idx);
+    std::string suffix = path_.substr(idx);
     if(SUFFIX_TYPE.count(suffix) == 1) {
         return SUFFIX_TYPE.find(suffix)->second;
     }
@@ -205,9 +203,9 @@ string HttpResponse::GetFileType_() {
  * @param[in] buff 写入缓冲区
  * @param[in] message 错误信息
  */
-void HttpResponse::ErrorContent(Buffer& buff, string message) {
-    string body;
-    string status;
+void HttpResponse::ErrorContent(Buffer& buff, std::string message) {
+    std::string body;
+    std::string status;
     body += "<html><title>Error</title>";
     body += "<body bgcolor=\"ffffff\">";
     if(CODE_STATUS.count(code_) == 1) {
@@ -215,10 +213,10 @@ void HttpResponse::ErrorContent(Buffer& buff, string message) {
     } else {
         status = "Bad Request";
     }
-    body += to_string(code_) + " : " + status  + "\n";
+    body += std::to_string(code_) + " : " + status  + "\n";
     body += "<p>" + message + "</p>";
     body += "<hr><em>TinyWebServer</em></body></html>";
 
-    buff.Append("Content-length: " + to_string(body.size()) + "\r\n\r\n");
+    buff.Append("Content-length: " + std::to_string(body.size()) + "\r\n\r\n");
     buff.Append(body);
 }

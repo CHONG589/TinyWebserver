@@ -1,8 +1,8 @@
 #include <string>
 #include <vector>
 
-#include "../include/coroutine/fiber.h"
-#include "../include/base/thread.h"
+#include "coroutine/fiber.h"
+#include "base/thread.h"
 #include "zchlog.h"
 
 void run_in_fiber2() {

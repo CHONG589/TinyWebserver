@@ -5,8 +5,8 @@
 #include <ifaddrs.h>
 #include <stddef.h>
 
-#include "../../include/base/address.h"
-#include "../../include/base/endian.h"
+#include "base/address.h"
+#include "base/endian.h"
 #include "zchlog.h"
 
 Address::ptr Address::Create(const sockaddr *addr, socklen_t addrlen) {
@@ -43,7 +43,7 @@ IPv4Address::ptr IPv4Address::Create(const char *address, uint16_t port) {
     rt->m_addr.sin_port = byteswapOnLittleEndian(port);
     int result = inet_pton(AF_INET, address, &rt->m_addr.sin_addr);
     if(result <= 0) {
-        LOG_DEBUG("IPv4Address::Create() error: %c!!!", strerror(errno));
+        LOG_WARN() << "IPv4Address::Create() error: " << strerror(errno);
         return nullptr;
     }
     return rt;
@@ -85,7 +85,7 @@ IPv6Address::ptr IPv6Address::Create(const char *address, uint16_t port) {
     rt->m_addr.sin6_port = byteswapOnLittleEndian(port);
     int result = inet_pton(AF_INET6, address, &rt->m_addr.sin6_addr);
     if(result <= 0) {
-        LOG_DEBUG("IPv6Address::Create() error: %c!!!", strerror(errno));
+        LOG_WARN() << "IPv6Address::Create() error: " << strerror(errno);
         return nullptr;
     }
     return rt;

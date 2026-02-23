@@ -1,6 +1,6 @@
-#include "../../include/base/socket.h"
-#include "../../include/coroutine/iomanager.h"
-#include "../../include/base/fd_manager.h"
+#include "base/socket.h"
+#include "coroutine/iomanager.h"
+#include "base/fd_manager.h"
 // #include "hook.h"
 
 Socket::Socket(int family, int type, int protocol)

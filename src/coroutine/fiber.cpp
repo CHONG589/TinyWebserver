@@ -1,8 +1,8 @@
 #include <atomic>
 #include <assert.h>
 
-#include "../../include/coroutine/fiber.h"
-#include "../../include/coroutine/scheduler.h"
+#include "coroutine/fiber.h"
+#include "coroutine/scheduler.h"
 
 // 全局静态变量，用于生成协程id
 static std::atomic<uint64_t> s_fiber_id{0};

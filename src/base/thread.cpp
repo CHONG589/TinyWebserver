@@ -1,4 +1,4 @@
-#include "../../include/base/thread.h"
+#include "base/thread.h"
 
 static thread_local Thread *t_thread          = nullptr;
 static thread_local std::string t_thread_name = "UNKNOW";

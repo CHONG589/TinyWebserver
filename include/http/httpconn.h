@@ -7,7 +7,7 @@
 #include <stdlib.h>      // atoi()
 #include <errno.h>      
 
-#include "../../include/base/buffer.h"
+#include "base/buffer.h"
 #include "httprequest.h"
 #include "httpresponse.h"
 #include "zchlog.h"

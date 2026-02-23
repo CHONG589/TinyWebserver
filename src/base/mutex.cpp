@@ -1,4 +1,4 @@
-#include "../../include/base/mutex.h"
+#include "base/mutex.h"
 
 Semaphore::Semaphore(uint32_t count) {
     if(sem_init(&m_semaphore, 0, count)) {

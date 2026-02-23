@@ -1,14 +1,13 @@
-#include "../../include/http/httprequest.h"
-using namespace std;
+#include "http/httprequest.h"
 
 // 网页名称，和一般的前端跳转不同，这里需要将请求信息放到后
 // 端来验证一遍再上传（和小组成员还起过争执）
-const unordered_set<string> HttpRequest::DEFAULT_HTML {
+const std::unordered_set<std::string> HttpRequest::DEFAULT_HTML {
     "/index", "/register", "/login", "/welcome", "/video", "/picture",
 };
 
 // 登录/注册
-const unordered_map<string, int> HttpRequest::DEFAULT_HTML_TAG {
+const std::unordered_map<std::string, int> HttpRequest::DEFAULT_HTML_TAG {
     {"/login.html", 1}, {"/register.html", 0}
 };
 
@@ -36,19 +35,19 @@ bool HttpRequest::parse(Buffer& buff) {
         // 从buff中的读指针开始到读指针结束，这块区域是未读取得数据并去处"\r\n"。
         // 第一，二个参数是查找范围，三，四个是要查找的序列,const char END[] = "\r\n";
         // 查找成功返回指向查找到的子序列中的第一个元素
-        const char *lineend = search(buff.Peek(), buff.BeginWriteConst(), END, END+2);
-        string line(buff.Peek(), lineend);
+        const char *lineend = std::search(buff.Peek(), buff.BeginWriteConst(), END, END+2);
+        std::string line(buff.Peek(), lineend);
         switch (state_) {
             case REQUEST_LINE:
                 // 解析错误
-                if(!ParseRequestLine_(line)) {
+                if(!ParseRequestLine_(lineend)) {
                     return false;
                 }
                 // 解析路径
                 ParsePath_();   
                 break;
             case HEADERS:
-                ParseHeader_(line);
+                ParseHeader_(lineend);
                 if(buff.ReadableBytes() <= 2) { 
                     //说明是空行，get请求，后面为\r\n 
                     //可读数据已经没了，说明解析完头部就已经没了,是 GET 请求
@@ -57,7 +56,7 @@ bool HttpRequest::parse(Buffer& buff) {
                 }
                 break;
             case BODY:
-                ParseBody_(line);
+                ParseBody_(lineend);
                 break;
             default:
                 break;
@@ -79,12 +78,12 @@ bool HttpRequest::parse(Buffer& buff) {
  * @param[in] line 请求行字符串
  * @return bool 解析是否成功
  */
-bool HttpRequest::ParseRequestLine_(const string& line) {
+bool HttpRequest::ParseRequestLine_(const std::string& line) {
     //([^ ]*):表示任意除了空格外的元素
-    regex patten("^([^ ]*) ([^ ]*) HTTP/([^ ]*)$");
+    std::regex patten("^([^ ]*) ([^ ]*) HTTP/([^ ]*)$");
     // 用来匹配patten得到结果
-    smatch Match;   
-    if(regex_match(line, Match, patten)) {  
+    std::smatch Match;   
+    if(std::regex_match(line, Match, patten)) {  
         // 匹配指定字符串整体是否符合
         // 在匹配规则中，以括号()的方式来划分组别 一共三个括号 [0]表示整体
         // 即Match[0]表示匹配的整个请求行。下标1，2，3分别表示对应的三种类别
@@ -118,19 +117,18 @@ void HttpRequest::ParsePath_() {
  * @brief 解析请求头
  * @param[in] line 请求头字符串
  */
-void HttpRequest::ParseHeader_(const string& line) {
+void HttpRequest::ParseHeader_(const std::string& line) {
     //第一组([^:]*)：表示所有非冒号的字符，即类型
     //然后后面紧跟一个冒号，
     //然后一个空格和?，表示空格可有可无，即冒号后面可有可无空格
     //(.*)$:末尾表示值，任意非\n，即换行的元素，值里面是可以有空格的。
-    regex patten("^([^:]*): ?(.*)$");
-    smatch Match;
-    if(regex_match(line, Match, patten)) {
+    std::regex patten("^([^:]*): ?(.*)$");
+    std::smatch Match;
+    if(std::regex_match(line, Match, patten)) {
         //解析完一行，继续请求头部，因为头部可能
         //有好几行。
         header_[Match[1]] = Match[2];
-    } 
-    else { 
+    } else { 
         // 匹配失败说明首部行匹配完了，状态变化   
         state_ = BODY;
     }
@@ -145,7 +143,7 @@ void HttpRequest::ParseFromUrlencoded_() {
 
     if(body_.size() == 0) return ; 
     
-    string key, value;
+    std::string key, value;
     int num = 0;
     int n = body_.size();
     int i = 0, j = 0;
@@ -213,7 +211,7 @@ void HttpRequest::ParsePost_() {
  * @brief 解析请求体
  * @param[in] line 请求体字符串
  */
-void HttpRequest::ParseBody_(const string& line) {
+void HttpRequest::ParseBody_(const std::string& line) {
     body_ = line;
     //因为有 body，所以是 post请求，会更改服务器中的数据，这里
     //用另外一个函数来处理。
@@ -242,7 +240,7 @@ int HttpRequest::ConverHex(char ch) {
  * @param[in] isLogin 是否为登录操作
  * @return bool 验证是否通过
  */
-bool HttpRequest::UserVerify(const string &name, const string &pwd, bool isLogin) {
+bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bool isLogin) {
     if(name.empty() || pwd.empty()) { 
         return false; 
     }
@@ -277,16 +275,16 @@ bool HttpRequest::UserVerify(const string &name, const string &pwd, bool isLogin
 
     while(MYSQL_ROW row = mysql_fetch_row(res)) {
         LOG_DEBUG() << "MYSQL ROW: " << row[0] << " " << row[1];
-        string password(row[1]);
+        std::string password(row[1]);
         /* 注册行为且用户名未被使用*/
         if(isLogin) {
-            if(pwd == password) { flag = true; }
-            else {
+            if(pwd == password) { 
+                flag = true; 
+            } else {
                 flag = false;
                 LOG_INFO() << "pwd error!";
             }
-        } 
-        else { 
+        } else { 
             flag = false; 
             LOG_INFO() << "user used!";
         }

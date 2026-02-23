@@ -1,5 +1,4 @@
-#include "../../include/http/httpconn.h"
-using namespace std;
+#include "http/httpconn.h"
 
 //关于类的静态变量为什么要类外初始化的文章
 //https://www.cnblogs.com/lixuejian/p/13215271.html

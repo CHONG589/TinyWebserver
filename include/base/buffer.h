@@ -8,7 +8,6 @@
 #include <atomic>
 #include <assert.h>
 
-class Buffer {
 /**
  * @attention:读写接口有两种，一个是与客户端直接IO交互所需要的读写接口，
  *            第二个是缓冲区收到了HTTP请求后，我们在处理过程中需要对缓

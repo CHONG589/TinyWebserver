@@ -13,8 +13,8 @@
 #include "tcp_server.h"
 #include "address.h"
 #include "socket.h"
-#include "../db/sqlconnpool.h"
-#include "../http/httpconn.h"
+#include "db/sqlconnpool.h"
+#include "http/httpconn.h"
 #include "zchlog.h"
 
 const int MAX_FD = 65536;

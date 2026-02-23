@@ -2,8 +2,8 @@
 #include <sys/socket.h>
 #include <assert.h>
 
-#include "../../include/base/http_server.h"
-#include "../../include/base/tcp_server.h"
+#include "base/http_server.h"
+#include "base/tcp_server.h"
 
 std::unordered_map<int, HttpConn> users_;
 

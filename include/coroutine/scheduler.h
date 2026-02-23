@@ -7,7 +7,7 @@
 #include <string>
 
 #include "fiber.h"
-#include "../base/thread.h"
+#include "base/thread.h"
 #include "zchlog.h"
 
 // 实现协程调度之后，可以解决前一章协程模块中子协程不能运行另一个子协程的缺陷，

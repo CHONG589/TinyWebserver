@@ -4,40 +4,41 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include "zchlog.h"
 
-#include "../include/coroutine/iomanager.h"
+#include "coroutine/iomanager.h"
 
 int sockfd;
 void watch_io_read();
 
 // 写事件回调，只执行一次，用于判断非阻塞套接字connect成功
 void do_io_write() {
-    LOG_INFO("do_io_write");
+    LOG_INFO() << "do_io_write";
     int so_err;
     socklen_t len = size_t(so_err);
     getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &so_err, &len);
     if(so_err) {
-        LOG_INFO("connect fail, so_err=%d", so_err);
+        LOG_INFO() << "connect fail, so_err=" << so_err;
         return;
     } 
-    LOG_INFO("connect success");
+    LOG_INFO() << "connect success";
 }
 
 // 读事件回调，每次读取之后如果套接字未关闭，需要重新添加
 void do_io_read() {
-    LOG_INFO("do_io_read");
+    LOG_INFO() << "do_io_read";
     char buf[1024] = {0};
     int readlen = 0;
     readlen = read(sockfd, buf, sizeof(buf));
     if(readlen > 0) {
         buf[readlen] = '\0';
-        LOG_INFO("read %d bytes, read: %s", readlen, buf);
+        LOG_INFO() << "read " << readlen << " bytes, read: " << buf;
     } else if(readlen == 0) {
-        LOG_INFO("peer closed");
+        LOG_INFO() << "peer closed";
         close(sockfd);
         return;
     } else {
-        LOG_INFO("read error, errno=%d, errstr=%s", errno, strerror(errno));
+        LOG_INFO() << "read error, errno=" << errno << ", errstr=" << strerror(errno);
         close(sockfd);
         return;
     }
@@ -46,12 +47,12 @@ void do_io_read() {
 }
 
 void watch_io_read() {
-    LOG_INFO("start read");
+    LOG_INFO() << "start read";
     IOManager::GetThis()->addEvent(sockfd, IOManager::READ, do_io_read);
 }
 
 void start_accept() {
-    LOG_INFO("start accept");
+    LOG_INFO() << "start accept";
 }
 
 void test_io() {
@@ -110,13 +111,14 @@ void test_iomanager() {
     IOManager iom;
     // sylar::IOManager iom(10); // 演示多线程下IO协程在不同线程之间切换
     // 添加调度任务 test_io
-    LOG_INFO("add test_io");
+    LOG_INFO() << "add test_io";
     iom.schedule(test_io);
 }
 
 int main(int argc, char *argv[]) {
 
-    Log::Instance()->init(1, "./log", ".log", 1024);
+    // 初始化日志系统 (加载配置文件)
+    zch::InitLogFromJson("/home/zch/Project/TinyWebserver/config/log_config.json");
     
     test_iomanager();
 

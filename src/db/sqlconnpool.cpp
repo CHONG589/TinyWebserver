@@ -1,4 +1,4 @@
-#include "../../include/db/sqlconnpool.h"
+#include "db/sqlconnpool.h"
 
 SqlConnPool* SqlConnPool::Instance() {
     static SqlConnPool pool;
@@ -37,7 +37,7 @@ MYSQL *SqlConnPool::GetConn() {
     }
     // 拿了一个后要减一，否则会一直阻塞
     sem_wait(&semId_);  // -1
-    lock_guard<mutex> locker(mtx_);
+    std::lock_guard<std::mutex> locker(mtx_);
     // 取出一个连接
     conn = connQue_.front();
     connQue_.pop();
@@ -47,13 +47,13 @@ MYSQL *SqlConnPool::GetConn() {
 // 释放连接，放回连接池，实际上没有关闭
 void SqlConnPool::FreeConn(MYSQL* conn) {
     assert(conn);
-    lock_guard<mutex> locker(mtx_);
+    std::lock_guard<std::mutex> locker(mtx_);
     connQue_.push(conn);
     sem_post(&semId_);  // +1
 }
 
 void SqlConnPool::ClosePool() {
-    lock_guard<mutex> locker(mtx_);
+    std::lock_guard<std::mutex> locker(mtx_);
     while(!connQue_.empty()) {
         auto conn = connQue_.front();
         connQue_.pop();
@@ -64,6 +64,6 @@ void SqlConnPool::ClosePool() {
 
 // 获取当前连接池中空闲的连接数
 int SqlConnPool::GetFreeConnCount() {
-    lock_guard<mutex> locker(mtx_);
+    std::lock_guard<std::mutex> locker(mtx_);
     return connQue_.size();
 }

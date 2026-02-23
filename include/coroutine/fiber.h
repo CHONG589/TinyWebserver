@@ -14,7 +14,7 @@
 #include <memory>
 #include <ucontext.h>
 
-#include "../base/thread.h"
+#include "base/thread.h"
 #include "zchlog.h"
 
 /**

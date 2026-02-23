@@ -1,5 +1,5 @@
-#include "../../include/base/timer.h"
-#include "../../include/base/util.h"
+#include "base/timer.h"
+#include "base/util.h"
 
 bool Timer::cancel() {
     TimerManager::RWMutexType::WriteLock lock(m_manager->m_mutex);

@@ -1,7 +1,7 @@
 #include <assert.h>
 
-#include "../../include/coroutine/scheduler.h"
-#include "../../include/base/util.h"
+#include "coroutine/scheduler.h"
+#include "base/util.h"
 
 // 当前线程的调度器，同一个调度器下的所有线程共享同一个实例
 static thread_local Scheduler *t_scheduler = nullptr;

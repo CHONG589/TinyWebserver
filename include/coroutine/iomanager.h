@@ -2,8 +2,8 @@
 #define IOMANAGER_H__
 
 #include "scheduler.h"
-#include "../base/timer.h"
-#include "../base/mutex.h"
+#include "base/timer.h"
+#include "base/mutex.h"
 #include "zchlog.h"
 
 class IOManager : public Scheduler, public TimerManager {
