@@ -1,78 +1,97 @@
-# 项目描述
+# TinyWebserver
 
-该项目是在 TinyWebServer 的基础上，参考 sylar 的项目增加了协程部分，以及地址封装、Socket封装、fd 封装等。
+## 简介
 
-TinyWebserver 参考：[Modern C++ 风格的 TinyWebServer](https://github.com/JehanRio/TinyWebServer)
+这是一个基于 C++11 开发的高性能 Web 服务器，结合了协程（Coroutine）和 Reactor 模型。项目在 [JehanRio/TinyWebServer](https://github.com/JehanRio/TinyWebServer) 的基础上，参考 [sylar](https://github.com/sylar-yin/sylar) 框架重构了核心组件，引入了协程调度和数据库连接池等高级特性。
 
-sylar：[C++高性能分布式服务器框架](https://github.com/sylar-yin/sylar)
+主要特点：
 
-后续还会继续优化项目，已实现的模块如下：
+- **核心架构**：采用 Epoll + 协程 + 线程池 的高并发模型。
+- **协程调度**：实现了 N-M 协程调度器，支持协程切换和自动调度，将异步 IO 转化为同步编码风格。
+- **IO协程调度**：基于 Epoll 封装了 IOManager，支持 Socket 读写事件的协程调度。
+- **日志系统**：自研 zchlog 日志库，支持流式日志、多级别输出、异步写入、文件回滚等功能。
+- **数据库连接池**：实现了 MySQL 数据库连接池，支持 RAII 机制自动管理连接生命周期，大幅提升数据库并发性能。
+- **配置系统**：基于 JSON 的配置管理，支持热加载（部分）。
 
-- [x] 线程模块
-- [x] 协程模块
-- [x] 协程调度模块
-- [x] IO 协程调度模块
-- [x] 定时器模块
-- [x] Address 模块
-- [x] Socket 模块
-- [x] TcpServer 类
-- [x] 流式日志实现(zchlog)
-- [x] 配置模块(Json)
-- [ ] HTTP (重新封装)
-- [ ] Hook 模块
-- [ ] Stream 模块
-- [ ] ByteArray 模块
-- [ ] 环境变量模块
-- [ ] 守护进程
+## 已实现模块
 
-# 运行
+- [x] 线程与线程同步模块 (Mutex, Semaphore, Lock)
+- [x] 协程核心模块 (Fiber, Scheduler)
+- [x] IO协程调度模块 (IOManager, Epoll)
+- [x] 网络模块 (Socket, Address, TcpServer)
+- [x] HTTP 服务器模块 (HttpServer, HttpConn)，还可以优化
+- [x] 数据库连接池 (ConnectionPool, MySQL)
+- [x] 日志模块 (zchlog)
+- [x] 配置模块 (JSON)
+- [x] 定时器模块 (Timer)
+- [ ] Hook 模块 (待完善)
 
+## 环境要求
+
+- Linux 环境
+- C++11 及以上编译器
+- CMake 3.0+
+- MySQL (可选，如果启用数据库功能)
+
+## 编译与运行
+
+### 创建构建目录
+
+```bash
+mkdir build && cd build
 ```
-cd TinyWebserver && cd build
 
-cmak .. && make -j 4
+### 编译项目
 
-cd .. && cd bin
+```bash
+cmake ..
+make -j4
+```
 
+### 运行服务器
+
+```bash
+cd ../bin
 ./server
 ```
 
-# 测试结果
+### 运行测试
+
+将项目主目录中的 CMakeLists.txt 中的 BUILD_TESTS 选项设置为 ON。
+
+```bash
+# 是否要编译测试程序
+option(BUILD_TESTS "Build tests" ON)
+```
+
+## 配置说明
+
+配置文件位于 `config/` 目录下：
+
+- `log_config.json`: 日志系统配置（日志级别、输出路径、格式等）
+- `db_config.json`: 数据库连接配置（IP、端口、用户名、密码、连接池大小等）
+
+## 性能测试
 
 在 CPU i5，内存 4G 的机器上运行。
 
-- 在第一版本没有协程，双 ET 模式下，用 webbench 实现了 8K 的并发量，运行 10s，QPS 为 1731。
+- **V1.0 (原始版本)**: 无协程，双 ET 模式，webbench 8K 并发，QPS 约 1731。
+  ![V1_0](docs/images/V1_0.png)
 
-![V1_0](docs/images/V1_0.png)
+- **V1.1 (协程版本)**: 引入协程调度，webbench 8K 并发，QPS 约 1524。
+  ![V1_1](docs/images/V1_1.png)
 
-- 在第二版本有协程，但是没有采用 ET 模式 (还未实现)，用 webbench 实现了 8K 的并发量，运行 10s，QPS 为 1524。
+*(注：性能数据待进一步优化和更新，当前主要关注架构的重构与功能的完善)*
 
-![V1_1](docs/images/V1_1.png)
+## 优化与改进记录
 
-怎么性能还下降了？是不是因为没有用到 ET 模式？(待优化的地方)
+- **构建系统**: 使用 CMake 替代 Makefile，支持多模块编译和依赖管理。
+- **日志系统**: 引入 zchlog 替代简易日志，支持更丰富的日志格式和性能优化。
+- **数据库**: 实现 ConnectionPool 连接池，支持多线程高并发下的数据库访问，并在测试中验证了显著的性能提升（多线程插入性能提升约 4-5 倍）。
+- **IO模型**: 正在完善基于协程的 IO 调度，旨在解决传统回调地狱问题，提供同步视角的异步编程体验。
+- **Bug修复**: 修复了中文路径解析问题；修复了 ConnectionPool 析构时的线程安全问题；修复了 HttpServer 编译错误。
 
-# 遇到的问题记录
+## 参考资料
 
-stat 函数不能解析中文字符串，否则会出错，自己在解析路径的时候，由于路径中有中文，导致解析失败，项目运行不了，导致找了好久好久。
-
-# 优化
-
-- 用 CMake 代替 Makefile。
-
-- 关于 ET 模式的处理，在各种读写中，如：
-
-```Cpp
-ssize_t HttpConn::read(int* saveErrno) {
-    LOG_INFO("start Read");
-    ssize_t len = -1;
-    do {
-        len = readBuff_.ReadFd(fd_, saveErrno);
-        if (len <= 0) {
-            break;
-        }
-    } while (isET); // ET:边沿触发要一次性全部读出
-    return len;
-}
-```
-
-- 项目中实际是没有用到 iomanager 这个模块的，所以对于 ET 模式、定时事件、Hook 都是没有用到的，项目中只是直接将任务用 `iom_schedule()` 添加到调度器中的，也没有用到 iomanager 的 epoll 。 
+- [TinyWebServer](https://github.com/JehanRio/TinyWebServer)
+- [sylar](https://github.com/sylar-yin/sylar)
