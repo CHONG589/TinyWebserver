@@ -17,16 +17,16 @@ void op1(int begin, int end) {
             sprintf(sql, "insert into person values(%d, 25, 'man', 'tom')", i);
             conn.Update(sql);
         } else {
-            cerr << "Connect failed" << endl;
+            LOG_ERROR() << "Connect failed";
         }
     }
 }
 
 int main() {
-    cout << "Testing Connection (Single Thread, No Pool)..." << endl;
-
     // 初始化日志系统 (加载配置文件)
     zch::InitLogFromJson("/home/zch/Project/TinyWebserver/config/log_config.json");
+    
+    LOG_INFO() << "Testing Connection (Single Thread, No Pool)...";
     
     // 每次运行前清空表，避免主键冲突
     {
@@ -42,8 +42,8 @@ int main() {
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     
     auto length = end - begin;
-    cout << "非连接池, 单线程, 插入100条数据用时: " << length.count() << " 纳秒, "
-         << length.count() / 1000000 << " 毫秒" << endl;
+    LOG_INFO() << "非连接池, 单线程, 插入100条数据用时: " << length.count() << " 纳秒, "
+         << length.count() / 1000000 << " 毫秒";
 
     return 0;
 }

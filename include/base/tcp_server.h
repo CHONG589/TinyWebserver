@@ -5,8 +5,6 @@
  * @date 2025-04-11
  */
 
- /*
-
 #ifndef TCP_SERVER_H__
 #define TCP_SERVER_H__
 
@@ -69,5 +67,3 @@ protected:
 };
 
 #endif
-
-*/

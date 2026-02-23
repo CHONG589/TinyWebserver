@@ -56,7 +56,7 @@ target_link_libraries(server
 )
 
 # 是否要编译测试程序
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TESTS "Build tests" OFF)
 
 # 添加测试子目录
 if(BUILD_TESTS)

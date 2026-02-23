@@ -18,24 +18,24 @@ void op2(ConnectionPool *pool, int begin, int end) {
             sprintf(sql, "insert into person values(%d, 25, 'man', 'tom')", i);
             conn->Update(sql);
         } else {
-            cerr << "GetConnection failed" << endl;
+            LOG_ERROR() << "GetConnection failed";
         }
     }
 }
 
 void test_pool_single_thread() {
-    cout << "Testing ConnectionPool (Single Thread)..." << endl;
+    LOG_INFO() << "Testing ConnectionPool (Single Thread)...";
     ConnectionPool &pool = ConnectionPool::GetConnectionPool();
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     op2(&pool, 0, 100);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto length = end - begin;
-    cout << "连接池, 单线程, 插入100条数据用时: " << length.count() << " 纳秒, "
-         << length.count() / 1000000 << " 毫秒" << endl;
+    LOG_INFO() << "连接池, 单线程, 插入100条数据用时: " << length.count() << " 纳秒, "
+         << length.count() / 1000000 << " 毫秒";
 }
 
 void test_pool_multi_thread() {
-    cout << "Testing ConnectionPool (Multi Thread)..." << endl;
+    LOG_INFO() << "Testing ConnectionPool (Multi Thread)...";
     ConnectionPool &pool = ConnectionPool::GetConnectionPool();
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     
@@ -51,8 +51,8 @@ void test_pool_multi_thread() {
     
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto length = end - begin;
-    cout << "连接池, 多线程(4线程), 插入100条数据用时: " << length.count() << " 纳秒, "
-         << length.count() / 1000000 << " 毫秒" << endl;
+    LOG_INFO() << "连接池, 多线程(4线程), 插入100条数据用时: " << length.count() << " 纳秒, "
+         << length.count() / 1000000 << " 毫秒";
 }
 
 int main() {
@@ -70,7 +70,7 @@ int main() {
     }
 
     test_pool_single_thread();
-    cout << "--------------------------------" << endl;
+    LOG_INFO() << "--------------------------------";
     test_pool_multi_thread();
     return 0;
 }

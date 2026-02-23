@@ -1,5 +1,3 @@
-/*
-
 #include "base/tcp_server.h"
 #include "base/http_server.h"
 
@@ -92,5 +90,3 @@ void TcpServer::handleClient(Socket::ptr client) {
 void TcpServer::startAccept(Socket::ptr sock) {
     
 }
-
-*/
