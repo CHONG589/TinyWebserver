@@ -27,6 +27,7 @@ include_directories(
 )
 
 # 添加子目录
+add_subdirectory(deps/jsoncpp)
 add_subdirectory(deps/zchlog)
 
 # 收集源文件（排除 main.cpp 用于创建库）
@@ -42,6 +43,7 @@ add_library(TinyWebServerLib STATIC ${LIB_SRC_FILES})
 target_link_libraries(TinyWebServerLib
     PUBLIC
     zchlog
+    jsoncpp_lib
     Threads::Threads
     mysqlclient
 )

@@ -3,10 +3,9 @@
 // - 通过 JSON 文件加载数据库与池参数，初始化最小连接数，并启动后台守护线程
 // - 关键并发原语：std::mutex + std::condition_variable 保护队列与线程协作
 #include <fstream>
-#include "db/ConnectionPool.h"
-#include "base/json.hpp"
 
-using json = nlohmann::json;
+#include <json/json.h>
+#include "db/ConnectionPool.h"
 
 /**
  * @brief 获取连接池单例
@@ -103,35 +102,44 @@ ConnectionPool::~ConnectionPool() {
 bool ConnectionPool::LoadConfigFile() {
     // 从 JSON 文件加载配置；相对路径依赖于可执行文件的工作目录
     std::ifstream ifs("/home/zch/Project/TinyWebserver/config/db_config.json");
-    json js;
-    ifs >> js;
-    std::cout << js << std::endl;
-    if (!js.is_object()) {
+    if (!ifs.is_open()) {
+        LOG_ERROR() << "open json file failed";
+        return false;
+    }
+    
+    Json::Reader reader;
+    Json::Value js;
+    if (!reader.parse(ifs, js)) {
+        LOG_ERROR() << "JSON parse error";
+        return false;
+    }
+
+    if (!js.isObject()) {
         LOG_ERROR() << "JSON is NOT Object";
         return false;
     }
     // 字段类型校验，保证配置的健壮性
-    if (!js["ip"].is_string() ||
-        !js["port"].is_number() ||
-        !js["user"].is_string() ||
-        !js["pwd"].is_string() ||
-        !js["db"].is_string() ||
-        !js["minSize"].is_number() ||
-        !js["maxSize"].is_number() ||
-        !js["maxIdleTime"].is_number() ||
-        !js["timeout"].is_number()) {
+    if (!js["ip"].isString() ||
+        !js["port"].isIntegral() ||
+        !js["user"].isString() ||
+        !js["pwd"].isString() ||
+        !js["db"].isString() ||
+        !js["minSize"].isIntegral() ||
+        !js["maxSize"].isIntegral() ||
+        !js["maxIdleTime"].isIntegral() ||
+        !js["timeout"].isIntegral()) {
         LOG_ERROR() << "JSON The data type does not match";
         return false;
     }
-    m_ip = js["ip"].get<std::string>();
-    m_port = js["port"].get<uint16_t>();
-    m_user = js["user"].get<std::string>();
-    m_pwd = js["pwd"].get<std::string>();
-    m_db = js["db"].get<std::string>();
-    m_minSize = js["minSize"].get<size_t>();
-    m_maxSize = js["maxSize"].get<size_t>();
-    m_maxIdleTime = js["maxIdleTime"].get<size_t>();     // 秒
-    m_connectionTimeout = js["timeout"].get<size_t>();   // 微秒
+    m_ip = js["ip"].asString();
+    m_port = js["port"].asUInt();
+    m_user = js["user"].asString();
+    m_pwd = js["pwd"].asString();
+    m_db = js["db"].asString();
+    m_minSize = js["minSize"].asUInt();
+    m_maxSize = js["maxSize"].asUInt();
+    m_maxIdleTime = js["maxIdleTime"].asUInt();     // 秒
+    m_connectionTimeout = js["timeout"].asUInt();   // 微秒
 
     return true;
 }

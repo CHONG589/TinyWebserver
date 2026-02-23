@@ -16,24 +16,20 @@ find_package(Threads REQUIRED)
 
 # --- 1. 定义库源文件 ---
 
-# JsonCpp 源文件
-file(GLOB JSONCPP_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/src/lib_json/*.cpp")
-
 # zchlog 核心源文件 (排除 main.cpp)
 file(GLOB ZCHLOG_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 list(REMOVE_ITEM ZCHLOG_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 
 # --- 2. 创建静态库目标 zchlog ---
-add_library(zchlog STATIC ${ZCHLOG_SOURCES} ${JSONCPP_SOURCES})
+add_library(zchlog STATIC ${ZCHLOG_SOURCES})
 
 # 设置头文件包含路径 (PUBLIC: 库内部和使用者都能看到)
 target_include_directories(zchlog PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/include>
 )
 
 # 链接线程库 (PRIVATE: 只有库内部需要知道使用了线程库，还是 PUBLIC？通常头文件没暴露线程库类型则 PRIVATE)
-target_link_libraries(zchlog PRIVATE Threads::Threads)
+target_link_libraries(zchlog PRIVATE Threads::Threads jsoncpp_lib)
 
 
 # --- 3. 示例程序 (main) ---
