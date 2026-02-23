@@ -10,6 +10,7 @@ HttpConn::HttpConn() {
     fd_ = -1;
     addr_ = { 0 };
     isClose_ = true;
+    isServerKeepAlive_ = false;
 };
 
 HttpConn::~HttpConn() { 
@@ -20,12 +21,14 @@ HttpConn::~HttpConn() {
 * @brief 初始化 HttpConn 对象
 * @param[in] sockFd 套接字文件描述符
 * @param[in] addr 客户端地址信息
+* @param[in] isKeepAlive 是否保持连接（服务器配置）
 */
-void HttpConn::init(int fd, const sockaddr_in& addr) {
+void HttpConn::init(int fd, const sockaddr_in& addr, bool isKeepAlive) {
     assert(fd > 0);
     userCount++;
     addr_ = addr;
     fd_ = fd;
+    isServerKeepAlive_ = isKeepAlive;
     writeBuff_.RetrieveAll();
     readBuff_.RetrieveAll();
     isClose_ = false;

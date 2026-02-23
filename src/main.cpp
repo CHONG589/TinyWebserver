@@ -8,6 +8,12 @@
 #include "http/httprequest.h"
 #include "zchlog.h"
 
+static std::string ip = "0.0.0.0";
+static int port = 8000;
+static std::string resources_dir;
+static uint64_t timeout = 120000;
+static int thread_num = 4;
+
 // 加载服务器配置
 bool LoadServerConfig(std::string& ip, int& port, std::string& resources_dir, uint64_t& timeout, int& thread_num) {
     std::ifstream ifs("/home/zch/Project/TinyWebserver/config/server.json");
@@ -42,19 +48,6 @@ void run() {
     
     LOG_INFO() << "Server starting...";
 
-    std::string ip = "0.0.0.0";
-    int port = 8000;
-    std::string resources_dir;
-    uint64_t timeout = 120000;
-    int thread_num = 4;
-    
-    if (!LoadServerConfig(ip, port, resources_dir, timeout, thread_num)) {
-        LOG_WARN() << "Load server config failed, using default";
-        resources_dir = "/home/zch/Project/TinyWebserver/resources";
-    }
-    
-    LOG_INFO() << "Config loaded - IP: " << ip << ", Port: " << port << ", Resources: " << resources_dir << ", Timeout: " << timeout << ", Threads: " << thread_num;
-
     // 绑定所有网卡的指定端口
     Address::ptr addr = IPv4Address::Create(ip.c_str(), port);
     if(!addr) {
@@ -79,20 +72,18 @@ void run() {
 
 int main() {
 
-    // 初始化日志
+    // 加载日志配置文件
     zch::InitLogFromJson("/home/zch/Project/TinyWebserver/config/log_config.json");
 
-    // 预加载配置以获取线程数
-    int thread_num = 4;
-    
-    std::ifstream ifs("/home/zch/Project/TinyWebserver/config/server.json");
-    if (ifs.is_open()) {
-        Json::Reader reader;
-        Json::Value root;
-        if (reader.parse(ifs, root) && root.isMember("server")) {
-            thread_num = root["server"].get("thread_num", 4).asInt();
-        }
+    // 加载服务器配置
+    if (!LoadServerConfig(ip, port, resources_dir, timeout, thread_num)) {
+        LOG_WARN() << "Load server config failed, using default";
+        resources_dir = "/home/zch/Project/TinyWebserver/resources";
     }
+    
+    LOG_INFO() << "Config loaded - IP: " << ip << ", Port: " << port 
+                << ", Resources: " << resources_dir << ", Timeout: " 
+                << timeout << "ms, Threads: " << thread_num;
 
     // 启动 IOManager
     IOManager::ptr manager = std::make_shared<IOManager>(thread_num, true);

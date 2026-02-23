@@ -53,11 +53,13 @@ std::shared_ptr<Connection> ConnectionPool::GetConnection() {
  * - 启动生产者线程与扫描回收线程（均为守护线程）
  */
 ConnectionPool::ConnectionPool() {
-    // 加载配置失败则不继续初始化
+
+    // 加载 JSON 配置文件
     if (!LoadConfigFile()) {
-        LOG_ERROR() << "JSON Config Error";
+        LOG_ERROR() << "load db_config.json failed";
         return;
     }
+
     // 创建初始数量的连接（维持不低于 _minSize）
     for (size_t i = 0; i < m_minSize; ++i) {
         AddConnection();

@@ -215,6 +215,7 @@ bool Socket::bind(const Address::ptr addr) {
             return false;
         }
     }
+    
     if(addr->getFamily() != m_family) {
         LOG_ERROR() << "bind sock.family and addr.family not equal!";
         return false;

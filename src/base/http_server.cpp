@@ -95,7 +95,7 @@ void HttpServer::startAccept(Socket::ptr sock) {
             // 初始化 HttpConn
             int client_socket = client->getSocket();
             sockaddr_in *addr = (sockaddr_in *)(client->getRemoteAddress()->getAddr());
-            users_[client_socket].init(client_socket, *addr);
+            users_[client_socket].init(client_socket, *addr, m_isKeepalive);
             
             m_ioWorker->schedule(std::bind(&HttpServer::handleClient, std::dynamic_pointer_cast<HttpServer>(shared_from_this()), client));
         }

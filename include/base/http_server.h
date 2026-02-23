@@ -42,9 +42,6 @@ public:
      * @brief 析构函数
      */
     ~HttpServer();
-    // void setUser(const std::string &user) { m_user = user; }
-    // void setPassword(const std::string &password) { m_password = password; }
-    // void setDatabaseName(const std::string &db_name) { m_database_name = db_name; }
 
     /**
      * @brief 处理客户端连接
@@ -61,9 +58,6 @@ public:
 private:
     // 是否保持连接
     bool m_isKeepalive;
-    // string m_user;
-    // string m_password;
-    // string m_database_name;
 };
 
 #endif
