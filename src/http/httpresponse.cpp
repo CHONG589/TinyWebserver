@@ -18,8 +18,8 @@ const std::unordered_map<std::string, std::string> HttpResponse::SUFFIX_TYPE = {
     { ".avi",   "video/x-msvideo" },
     { ".gz",    "application/x-gzip" },
     { ".tar",   "application/x-tar" },
-    { ".css",   "text/css "},
-    { ".js",    "text/javascript "},
+    { ".css",   "text/css"},
+    { ".js",    "text/javascript"},
 };
 
 const std::unordered_map<int, std::string> HttpResponse::CODE_STATUS = {
@@ -160,10 +160,17 @@ void HttpResponse::AddContent_(Buffer& buff) {
         return; 
     }
 
+    if(mmFileStat_.st_size == 0) {
+        mmFile_ = nullptr;
+        close(srcFd);
+        buff.Append("Content-length: 0\r\n\r\n");
+        return;
+    }
+
     // 将文件映射到内存提高文件的访问速度  MAP_PRIVATE 建立一个写入时拷贝的私有映射
     LOG_INFO() << "file path " << (srcDir_ + path_);
     int* mmRet = (int*)mmap(0, mmFileStat_.st_size, PROT_READ, MAP_PRIVATE, srcFd, 0);
-    if(*mmRet == -1) {
+    if(mmRet == (int*)MAP_FAILED) {
         ErrorContent(buff, "File NotFound!");
         return; 
     }

@@ -40,14 +40,14 @@ bool HttpRequest::parse(Buffer& buff) {
         switch (state_) {
             case REQUEST_LINE:
                 // 解析错误
-                if(!ParseRequestLine_(lineend)) {
+                if(!ParseRequestLine_(line)) {
                     return false;
                 }
                 // 解析路径
                 ParsePath_();   
                 break;
             case HEADERS:
-                ParseHeader_(lineend);
+                ParseHeader_(line);
                 if(buff.ReadableBytes() <= 2) { 
                     //说明是空行，get请求，后面为\r\n 
                     //可读数据已经没了，说明解析完头部就已经没了,是 GET 请求
@@ -56,7 +56,7 @@ bool HttpRequest::parse(Buffer& buff) {
                 }
                 break;
             case BODY:
-                ParseBody_(lineend);
+                ParseBody_(line);
                 break;
             default:
                 break;
@@ -102,11 +102,10 @@ bool HttpRequest::ParseRequestLine_(const std::string& line) {
  */
 void HttpRequest::ParsePath_() {
     if(path_ == "/") {
-        //请求的是根目录，那么给它一个 index.html
         path_ = "/index.html";
     } 
     else {
-        //请求的是自己定义的页
+        // 如果访问 /login，自动补全为 /login.html
         if(DEFAULT_HTML.find(path_) != DEFAULT_HTML.end()) {
             path_ += ".html";
         }

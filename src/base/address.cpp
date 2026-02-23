@@ -199,3 +199,60 @@ const sockaddr *UnknownAddress::getAddr() const {
 socklen_t UnknownAddress::getAddrLen() const {
     return sizeof(m_addr);
 }
+
+std::ostream& Address::insert(std::ostream& os) const {
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Address& addr) {
+    return addr.insert(os);
+}
+
+std::ostream& IPv4Address::insert(std::ostream& os) const {
+    uint32_t addr = byteswapOnLittleEndian(m_addr.sin_addr.s_addr);
+    os << ((addr >> 24) & 0xff) << "."
+       << ((addr >> 16) & 0xff) << "."
+       << ((addr >> 8) & 0xff) << "."
+       << (addr & 0xff);
+    os << ":" << byteswapOnLittleEndian(m_addr.sin_port);
+    return os;
+}
+
+std::ostream& IPv6Address::insert(std::ostream& os) const {
+    os << "[";
+    uint16_t* addr = (uint16_t*)m_addr.sin6_addr.s6_addr;
+    bool used_zeros = false;
+    for(size_t i = 0; i < 8; ++i) {
+        if(addr[i] == 0 && !used_zeros) {
+            continue;
+        }
+        if(i && addr[i-1] == 0 && !used_zeros) {
+            os << ":";
+            used_zeros = true;
+        }
+        if(i) {
+            os << ":";
+        }
+        os << std::hex << (int)byteswapOnLittleEndian(addr[i]) << std::dec;
+    }
+    if(!used_zeros && addr[7] == 0) {
+        os << "::";
+    }
+
+    os << "]:" << byteswapOnLittleEndian(m_addr.sin6_port);
+    return os;
+}
+
+std::ostream& UnixAddress::insert(std::ostream& os) const {
+    if(m_length > offsetof(sockaddr_un, sun_path)
+            && m_addr.sun_path[0] == '\0') {
+        return os << "\\0" << std::string(m_addr.sun_path + 1,
+                m_length - offsetof(sockaddr_un, sun_path) - 1);
+    }
+    return os << m_addr.sun_path;
+}
+
+std::ostream& UnknownAddress::insert(std::ostream& os) const {
+    os << "[UnknownAddress family=" << m_addr.sa_family << "]";
+    return os;
+}

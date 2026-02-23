@@ -56,20 +56,16 @@ bool TcpServer::bind(const std::vector<Address::ptr> &addrs
     return true;
 }
 
-// bool TcpServer::start() {
-//     if(!m_isStop) {
-//         return true;
-//     }
-//     m_isStop = false;
-//     for(auto &i : m_socks) {
-//         // m_acceptWorker->schedule(std::bind(&HttpServer::startAccept, shared_from_this(), i));
-//         auto callback = std::bind(&HttpServer::startAccept, shared_from_this(), i);
-//         m_acceptWorker->addEvent(sock->getSocket(), IOManager::READ
-//             , callback);
-
-//     }
-//     return true;
-// }
+bool TcpServer::start() {
+    if(!m_isStop) {
+        return true;
+    }
+    m_isStop = false;
+    for(auto &sock : m_socks) {
+        m_acceptWorker->schedule(std::bind(&TcpServer::startAccept, shared_from_this(), sock));
+    }
+    return true;
+}
 
 void TcpServer::stop() {
     m_isStop = true;
@@ -88,5 +84,13 @@ void TcpServer::handleClient(Socket::ptr client) {
 }
 
 void TcpServer::startAccept(Socket::ptr sock) {
-    
+    while(!m_isStop) {
+        Socket::ptr client = sock->accept();
+        if(client) {
+            client->setRecvTimeout(m_recvTimeout);
+            m_ioWorker->schedule(std::bind(&TcpServer::handleClient, shared_from_this(), client));
+        } else {
+            LOG_ERROR() << "accept errno=" << errno << " errstr=" << strerror(errno);
+        }
+    }
 }
