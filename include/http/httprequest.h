@@ -9,7 +9,8 @@
 #include <mysql/mysql.h>  //mysql
 
 #include "base/buffer.h"
-#include "db/sqlconnpool.h"
+#include "db/ConnectionPool.h"
+#include "db/Connection.h"
 #include "zchlog.h"
 
 class HttpRequest {

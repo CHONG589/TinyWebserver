@@ -11,6 +11,7 @@
 #include "httprequest.h"
 #include "httpresponse.h"
 #include "zchlog.h"
+// #include "db/sqlconnpool.h"
 
 class HttpConn {
 public:

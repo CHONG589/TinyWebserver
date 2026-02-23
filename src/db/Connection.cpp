@@ -3,7 +3,7 @@
 // - 维护连接活跃时间，供连接池回收策略参考
 // - 采用 RAII 管理连接生命周期，避免资源泄漏
 
-#include "Connection.h"
+#include "db/Connection.h"
 
 /**
  * @brief 构造函数
@@ -11,9 +11,9 @@
  */
 Connection::Connection() {
     // 初始化连接句柄；若传入非空指针则复用，否则新建
-    _conn = mysql_init(nullptr);
+    m_conn = mysql_init(nullptr);
     // 设置字符集编码，确保写入/读取中文等字符不乱码
-    mysql_set_character_set(_conn, "utf8");
+    mysql_set_character_set(m_conn, "utf8");
 }
 
 /**
@@ -21,9 +21,9 @@ Connection::Connection() {
  * 若存在有效连接，自动关闭以释放服务器与客户端资源
  */
 Connection::~Connection() {
-    if (_conn != nullptr) {
+    if (m_conn != nullptr) {
         // 析构阶段关闭连接，释放服务器端与客户端资源
-        mysql_close(_conn);
+        mysql_close(m_conn);
     }
 }
 
@@ -41,8 +41,8 @@ Connection::~Connection() {
 bool Connection::Connect(const std::string &ip, const uint16_t port, const std::string &user, const std::string &pwd,
                          const std::string &db) {
     // 建立到 MySQL 的真实连接；成功则返回非空连接句柄
-    _conn = mysql_real_connect(_conn, ip.c_str(), user.c_str(), pwd.c_str(), db.c_str(), port, nullptr, 0);
-    if (_conn == nullptr) {
+    m_conn = mysql_real_connect(m_conn, ip.c_str(), user.c_str(), pwd.c_str(), db.c_str(), port, nullptr, 0);
+    if (m_conn == nullptr) {
         LOG_ERROR() << "MySQL Connect Error";
         return false;
     }
@@ -58,9 +58,9 @@ bool Connection::Connect(const std::string &ip, const uint16_t port, const std::
  */
 bool Connection::Update(const std::string &sql) {
     // 执行写语句（INSERT/UPDATE/DELETE 等）；返回 0 表示成功
-    if (mysql_query(_conn, sql.c_str()) != 0) {
-        // mysql_error(_conn) 返回错误字符串，便于定位问题
-        LOG_INFO() << "SQL " << sql << " 更新失败：" << mysql_error(_conn);
+    if (mysql_query(m_conn, sql.c_str()) != 0) {
+        // mysql_error(m_conn) 返回错误字符串，便于定位问题
+        LOG_INFO() << "SQL " << sql << " 更新失败：" << mysql_error(m_conn);
         return false;
     }
     return true;
@@ -77,13 +77,13 @@ bool Connection::Update(const std::string &sql) {
  */
 MYSQL_RES *Connection::Query(const std::string &sql) {
     // 执行查询语句；非 0 表示失败
-    if (mysql_query(_conn, sql.c_str()) != 0) {
+    if (mysql_query(m_conn, sql.c_str()) != 0) {
         // 返回 nullptr 表示失败；请根据业务场景做判空处理
-        LOG_INFO() << "SQL " << sql << " 查询失败：" << mysql_error(_conn);
+        LOG_INFO() << "SQL " << sql << " 查询失败：" << mysql_error(m_conn);
         return nullptr;
     }
     // 使用流式结果集读取；使用方应在读取完毕后调用 mysql_free_result 释放
-    return mysql_use_result(_conn);
+    return mysql_use_result(m_conn);
 }
 
 /**
@@ -98,7 +98,7 @@ void Connection::RefreshAliveTime() {
     // 调用方用完连接后，通过智能指针的自定义析构把连接
     // 放回队列，同时调用 RefreshAliveTime，这样下一
     // 次空闲计时从“归还时刻”重新开始。
-    _aliveTime = std::chrono::steady_clock::now();
+    m_aliveTime = std::chrono::steady_clock::now();
 }
 
 /**
@@ -107,5 +107,5 @@ void Connection::RefreshAliveTime() {
  */
 long long Connection::GetAliveTime() const {
     // 返回自上次刷新以来的时间差（微秒）
-    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - _aliveTime).count();
+    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_aliveTime).count();
 }

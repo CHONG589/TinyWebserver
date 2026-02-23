@@ -13,12 +13,13 @@
 // - 与连接池协作：aliveTime 用于池内回收策略（超时空闲连接）
 //
 
-#ifndef CLUSTERCHATSERVER_CONNECTION_H
-#define CLUSTERCHATSERVER_CONNECTION_H
+#ifndef CONNECTION_H__
+#define CONNECTION_H__
 
 #include <mysql/mysql.h>
 #include <chrono>
 #include <string>
+
 #include "zchlog.h"
 
 class Connection {
@@ -44,7 +45,7 @@ public:
      * @param[in] db   目标数据库名
      * @return     连接成功返回 true，失败返回 false（并打印错误日志）
      *
-     * 说明：内部调用 mysql_real_connect 完成握手；调用成功后 _conn 为有效连接句柄
+     * 说明：内部调用 mysql_real_connect 完成握手；调用成功后 m_conn 为有效连接句柄
      */
     bool Connect(const std::string &ip, const uint16_t port, const std::string &user, const std::string &pwd,
                  const std::string &db);
@@ -86,10 +87,10 @@ public:
 
 private:
     // MySQL C API 的连接句柄；通过 mysql_init / mysql_real_connect 获得
-    MYSQL *_conn;
+    MYSQL *m_conn;
     // 最近一次活跃时间；用于连接池空闲连接的扫描与回收
     // 用来衡量这条连接在连接池里已经闲置了多久
-    std::chrono::time_point<std::chrono::steady_clock> _aliveTime;
+    std::chrono::time_point<std::chrono::steady_clock> m_aliveTime;
 };
 
-#endif //CLUSTERCHATSERVER_CONNECTION_H
+#endif

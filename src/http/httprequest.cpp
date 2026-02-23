@@ -1,7 +1,7 @@
 #include "http/httprequest.h"
 
 // 网页名称，和一般的前端跳转不同，这里需要将请求信息放到后
-// 端来验证一遍再上传（和小组成员还起过争执）
+// 端来验证一遍再上传i（和小组成员还起过争执）
 const std::unordered_set<std::string> HttpRequest::DEFAULT_HTML {
     "/index", "/register", "/login", "/welcome", "/video", "/picture",
 };
@@ -246,14 +246,18 @@ bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bo
     }
 
     LOG_INFO() << "Verify name:" << name << " pwd:" << pwd;
-    MYSQL* sql;
-    SqlConnRAII(&sql, SqlConnPool::Instance());
-    assert(sql);
+    
+    // 获取数据库连接
+    std::shared_ptr<Connection> conn = ConnectionPool::GetConnectionPool().GetConnection();
+    if (!conn) {
+        LOG_ERROR() << "Get database connection failed!";
+        return false;
+    }
     
     bool flag = false;
-    unsigned int j = 0;
+    // unsigned int j = 0;
     char order[256] = { 0 };
-    MYSQL_FIELD *fields = nullptr;
+    // MYSQL_FIELD *fields = nullptr;
     MYSQL_RES *res = nullptr;
     
     if(!isLogin) {
@@ -264,14 +268,13 @@ bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bo
     snprintf(order, 256, "SELECT username, password FROM user WHERE username='%s' LIMIT 1", name.c_str());
     LOG_DEBUG() << order;
 
-    if(mysql_query(sql, order)) { 
-        mysql_free_result(res);
+    res = conn->Query(order);
+    if(res == nullptr) { 
         return false; 
     }
 
-    res = mysql_store_result(sql);
-    j = mysql_num_fields(res);
-    fields = mysql_fetch_fields(res);
+    // j = mysql_num_fields(res);
+    // fields = mysql_fetch_fields(res);
 
     while(MYSQL_ROW row = mysql_fetch_row(res)) {
         LOG_DEBUG() << "MYSQL ROW: " << row[0] << " " << row[1];
@@ -291,13 +294,13 @@ bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bo
     }
     mysql_free_result(res);
 
-    /* 注册行为 且 用户名未被使用*/
+    /* 注册行为 且用户名未被使用*/
     if(!isLogin && flag == true) {
         LOG_DEBUG() << "regirster!";
         bzero(order, 256);
         snprintf(order, 256,"INSERT INTO user(username, password) VALUES('%s','%s')", name.c_str(), pwd.c_str());
         LOG_DEBUG() << order;
-        if(mysql_query(sql, order)) { 
+        if(!conn->Update(order)) { 
             LOG_DEBUG() << "Insert error!";
             flag = false; 
         }
