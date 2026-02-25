@@ -16,9 +16,9 @@ static int thread_num = 4;
 
 // 加载服务器配置
 bool LoadServerConfig(std::string& ip, int& port, std::string& resources_dir, uint64_t& timeout, int& thread_num) {
-    std::ifstream ifs("/home/zch/Project/TinyWebserver/config/server.json");
+    std::ifstream ifs("/home/Project/TinyWebserver/config/server.json");
     if (!ifs.is_open()) {
-        LOG_ERROR() << "Open server config failed: /home/zch/Project/TinyWebserver/config/server.json";
+        LOG_ERROR() << "Open server config failed: /home/Project/TinyWebserver/config/server.json";
         return false;
     }
     
@@ -73,12 +73,12 @@ void run() {
 int main() {
 
     // 加载日志配置文件
-    zch::InitLogFromJson("/home/zch/Project/TinyWebserver/config/log_config.json");
+    zch::InitLogFromJson("/home/Project/TinyWebserver/config/log_config.json");
 
     // 加载服务器配置
     if (!LoadServerConfig(ip, port, resources_dir, timeout, thread_num)) {
         LOG_WARN() << "Load server config failed, using default";
-        resources_dir = "/home/zch/Project/TinyWebserver/resources";
+        resources_dir = "/home/Project/TinyWebserver/resources";
     }
     
     LOG_INFO() << "Config loaded - IP: " << ip << ", Port: " << port 

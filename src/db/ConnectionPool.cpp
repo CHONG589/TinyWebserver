@@ -103,7 +103,7 @@ ConnectionPool::~ConnectionPool() {
  */
 bool ConnectionPool::LoadConfigFile() {
     // 从 JSON 文件加载配置；相对路径依赖于可执行文件的工作目录
-    std::ifstream ifs("/home/zch/Project/TinyWebserver/config/db_config.json");
+    std::ifstream ifs("/home/Project/TinyWebserver/config/db_config.json");
     if (!ifs.is_open()) {
         LOG_ERROR() << "open json file failed: /home/zch/Project/TinyWebserver/config/db_config.json";
         return false;

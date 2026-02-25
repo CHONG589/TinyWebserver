@@ -12,7 +12,7 @@
         },
         {
           "type": "roll_by_time",
-          "dir": "/home/zch/Project/TinyWebserver/logs",
+          "dir": "/home/Project/TinyWebserver/logs",
           "gap": "day"
         }
       ]
