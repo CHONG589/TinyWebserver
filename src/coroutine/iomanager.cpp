@@ -8,50 +8,6 @@
 enum EpollCtlOp {
 };
 
-static std::ostream &operator<<(std::ostream &os, const EpollCtlOp &op) {
-    switch ((int)op) {
-#define XX(ctl) \
-    case ctl:   \
-        return os << #ctl;
-        XX(EPOLL_CTL_ADD);
-        XX(EPOLL_CTL_MOD);
-        XX(EPOLL_CTL_DEL);
-#undef XX
-    default:
-        return os << (int)op;
-    }
-}
-
-static std::ostream &operator<<(std::ostream &os, EPOLL_EVENTS events) {
-    if (!events) {
-        return os << "0";
-    }
-    bool first = true;
-#define XX(E)          \
-    if (events & E) {  \
-        if (!first) {  \
-            os << "|"; \
-        }              \
-        os << #E;      \
-        first = false; \
-    }
-    XX(EPOLLIN);
-    XX(EPOLLPRI);
-    XX(EPOLLOUT);
-    XX(EPOLLRDNORM);
-    XX(EPOLLRDBAND);
-    XX(EPOLLWRNORM);
-    XX(EPOLLWRBAND);
-    XX(EPOLLMSG);
-    XX(EPOLLERR);
-    XX(EPOLLHUP);
-    XX(EPOLLRDHUP);
-    XX(EPOLLONESHOT);
-    XX(EPOLLET);
-#undef XX
-    return os;
-}
-
 /**
 * @brief Construct a new IOManager object
 * @param[in] threads 线程数

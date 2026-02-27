@@ -166,7 +166,7 @@ void ConnectionPool::ProduceConnectionTask() {
         }
 
         // 容量未达上限则创建新连接
-        if (m_connectionCount < m_maxSize) {
+        if (m_connectionCount < (int)m_maxSize) {
             AddConnection();
         }
         m_cv.notify_all();
@@ -193,12 +193,13 @@ void ConnectionPool::ScannerConnectionTask() {
         }
 
         // 仅在当前连接总数大于最小容量时尝试回收
-        while (m_connectionCount > m_minSize) {
+        while (m_connectionCount > (int)m_minSize) {
             // 队列近似按归还时间排序：队头最“老”，若它未超时，后续更“新”的也不会超时
             Connection *ptr = m_connectionQueue.front();
             // 说明：GetAliveTime 返回微秒；此处比较阈值使用 _maxIdleTime * 1000（毫秒），
             // 若需要严格一致，可将比较统一为同单位
-            if (ptr->GetAliveTime() >= m_maxIdleTime * 1000) {
+            size_t aliveTime = ptr->GetAliveTime();
+            if (aliveTime >= m_maxIdleTime * 1000) {
                 m_connectionQueue.pop();
                 --m_connectionCount;
                 delete ptr;
