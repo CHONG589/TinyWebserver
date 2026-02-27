@@ -70,18 +70,7 @@ option(BUILD_TESTS "Build tests" ON)
 
 - `log_config.json`: 日志系统配置（日志级别、输出路径、格式等）
 - `db_config.json`: 数据库连接配置（IP、端口、用户名、密码、连接池大小等）
-
-## 性能测试
-
-在 CPU i5，内存 4G 的机器上运行。
-
-- **V1.0 (原始版本)**: 无协程，双 ET 模式，webbench 8K 并发，QPS 约 1731。
-  ![V1_0](docs/images/V1_0.png)
-
-- **V1.1 (协程版本)**: 引入协程调度，webbench 8K 并发，QPS 约 1524。
-  ![V1_1](docs/images/V1_1.png)
-
-*(注：性能数据待进一步优化和更新，当前主要关注架构的重构与功能的完善)*
+- `server.json`: 服务器相关的一些配置（ip、port、资源文件夹路径、超时时间、线程数）
 
 ## 优化与改进记录
 
