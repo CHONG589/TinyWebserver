@@ -53,11 +53,13 @@ std::shared_ptr<Connection> ConnectionPool::GetConnection() {
  * - 启动生产者线程与扫描回收线程（均为守护线程）
  */
 ConnectionPool::ConnectionPool() {
-    // 加载配置失败则不继续初始化
+
+    // 加载 JSON 配置文件
     if (!LoadConfigFile()) {
-        LOG_ERROR() << "JSON Config Error";
+        LOG_ERROR() << "load db_config.json failed";
         return;
     }
+
     // 创建初始数量的连接（维持不低于 _minSize）
     for (size_t i = 0; i < m_minSize; ++i) {
         AddConnection();
@@ -103,7 +105,7 @@ bool ConnectionPool::LoadConfigFile() {
     // 从 JSON 文件加载配置；相对路径依赖于可执行文件的工作目录
     std::ifstream ifs("/home/zch/Project/TinyWebserver/config/db_config.json");
     if (!ifs.is_open()) {
-        LOG_ERROR() << "open json file failed";
+        LOG_ERROR() << "open json file failed: /home/zch/Project/TinyWebserver/config/db_config.json";
         return false;
     }
     
@@ -164,7 +166,7 @@ void ConnectionPool::ProduceConnectionTask() {
         }
 
         // 容量未达上限则创建新连接
-        if (m_connectionCount < m_maxSize) {
+        if (m_connectionCount < (int)m_maxSize) {
             AddConnection();
         }
         m_cv.notify_all();
@@ -191,12 +193,13 @@ void ConnectionPool::ScannerConnectionTask() {
         }
 
         // 仅在当前连接总数大于最小容量时尝试回收
-        while (m_connectionCount > m_minSize) {
+        while (m_connectionCount > (int)m_minSize) {
             // 队列近似按归还时间排序：队头最“老”，若它未超时，后续更“新”的也不会超时
             Connection *ptr = m_connectionQueue.front();
             // 说明：GetAliveTime 返回微秒；此处比较阈值使用 _maxIdleTime * 1000（毫秒），
             // 若需要严格一致，可将比较统一为同单位
-            if (ptr->GetAliveTime() >= m_maxIdleTime * 1000) {
+            size_t aliveTime = ptr->GetAliveTime();
+            if (aliveTime >= m_maxIdleTime * 1000) {
                 m_connectionQueue.pop();
                 --m_connectionCount;
                 delete ptr;

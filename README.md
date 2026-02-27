@@ -70,18 +70,7 @@ option(BUILD_TESTS "Build tests" ON)
 
 - `log_config.json`: 日志系统配置（日志级别、输出路径、格式等）
 - `db_config.json`: 数据库连接配置（IP、端口、用户名、密码、连接池大小等）
-
-## 性能测试
-
-在 CPU i5，内存 4G 的机器上运行。
-
-- **V1.0 (原始版本)**: 无协程，双 ET 模式，webbench 8K 并发，QPS 约 1731。
-  ![V1_0](docs/images/V1_0.png)
-
-- **V1.1 (协程版本)**: 引入协程调度，webbench 8K 并发，QPS 约 1524。
-  ![V1_1](docs/images/V1_1.png)
-
-*(注：性能数据待进一步优化和更新，当前主要关注架构的重构与功能的完善)*
+- `server.json`: 服务器相关的一些配置（ip、port、资源文件夹路径、超时时间、线程数）
 
 ## 优化与改进记录
 
@@ -90,6 +79,11 @@ option(BUILD_TESTS "Build tests" ON)
 - **数据库**: 实现 ConnectionPool 连接池，支持多线程高并发下的数据库访问，并在测试中验证了显著的性能提升（多线程插入性能提升约 4-5 倍）。
 - **IO模型**: 正在完善基于协程的 IO 调度，旨在解决传统回调地狱问题，提供同步视角的异步编程体验。
 - **Bug修复**: 修复了中文路径解析问题；修复了 ConnectionPool 析构时的线程安全问题；修复了 HttpServer 编译错误。
+
+## 待完成
+
+- 未提供设置是否用 ET 模式的接口
+- isKeepAlive 的也未进行编写
 
 ## 参考资料
 

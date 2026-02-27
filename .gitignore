@@ -45,6 +45,7 @@ logs/
 *.swp
 *~
 .DS_Store
+.clangd/
 
 # CMake
 CMakeCache.txt

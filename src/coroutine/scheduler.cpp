@@ -117,14 +117,14 @@ bool Scheduler::stopping() {
 * @brief 通知协程调度器有任务了
 */
 void Scheduler::tickle() { 
-    LOG_INFO() << "ticle scheduler...";
+    LOG_DEBUG() << "ticle scheduler...";
 }
 
 /**
 * @brief 空闲协程，没有任务是执行的协程
 */
 void Scheduler::idle() {
-    LOG_INFO() << "Scheduler::idle....";
+    LOG_DEBUG() << "Scheduler::idle....";
     while (!stopping()) {
         Fiber::GetThis()->yield();
     }

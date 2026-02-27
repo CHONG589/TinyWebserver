@@ -22,8 +22,9 @@ public:
      * @brief 初始化 HttpConn 对象
      * @param[in] sockFd 套接字文件描述符
      * @param[in] addr 客户端地址信息
+     * @param[in] isKeepAlive 是否保持连接（服务器配置）
      */
-    void init(int sockFd, const sockaddr_in& addr);
+    void init(int sockFd, const sockaddr_in& addr, bool isKeepAlive = true);
 
     /**
      * @brief 从客户端中读取数据，即从套接字读取
@@ -87,7 +88,7 @@ public:
      * @return bool 是否保持连接
      */
     bool IsKeepAlive() const {
-        return request_.IsKeepAlive();
+        return isServerKeepAlive_ && request_.IsKeepAlive();
     }
 
     static bool isET;
@@ -103,6 +104,9 @@ private:
 
     // 是否关闭连接
     bool isClose_;
+
+    // 服务器配置的是否保持连接
+    bool isServerKeepAlive_;
     // 用于 writev 系统调用的 iovec 数组
     int iovCnt_;
     struct iovec iov_[2];
@@ -110,7 +114,7 @@ private:
     // 下面两个缓冲区是和 client 端交互的。
     // 存从浏览器发来的数据，要解析的请求报文就从这个缓冲区中读取
     Buffer readBuff_;
-    // 将弄好的响应的报文就是写入这个缓冲区中，用来发送个浏览器
+    // 将弄好的响应的报文就是写入这个缓冲区中，用来发送给浏览器
     Buffer writeBuff_;
    
     // HTTP 请求对象
