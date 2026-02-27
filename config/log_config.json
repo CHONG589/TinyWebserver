@@ -2,7 +2,7 @@
   "loggers": [
     {
       "name": "root",
-      "level": "DEBUG",
+      "level": "INFO",
       "type": "async",
       "async_unsafe": false,
       "pattern": "[%d{%Y-%m-%d %H:%M:%S}][%p][%f:%l]%m%n",

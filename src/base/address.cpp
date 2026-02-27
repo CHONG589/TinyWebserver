@@ -36,6 +36,98 @@ Address::ptr Address::Create(const sockaddr *addr, socklen_t addrlen) {
 }
 
 /**
+* @brief 通过host地址返回对应条件的所有Address
+* @param[out] result 保存满足条件的Address
+* @param[in] host 域名,服务器名等.举例: www.sylar.top[:80] (方括号为可选内容)
+* @param[in] family 协议族(AF_INT, AF_INT6, AF_UNIX)
+* @param[in] type socketl类型SOCK_STREAM、SOCK_DGRAM 等
+* @param[in] protocol 协议,IPPROTO_TCP、IPPROTO_UDP 等
+* @return 返回是否转换成功
+*/
+bool Address::Lookup(std::vector<Address::ptr> &result, const std::string &host, int family, int type, int protocol) {
+    addrinfo hints, *results, *next;
+    hints.ai_flags     = 0;
+    hints.ai_family    = family;
+    hints.ai_socktype  = type;
+    hints.ai_protocol  = protocol;
+    hints.ai_addrlen   = 0;
+    hints.ai_canonname = NULL;
+    hints.ai_addr      = NULL;
+    hints.ai_next      = NULL;
+
+    std::string node;
+    const char *service = NULL;
+
+    // 检查 ipv6address serivce
+    if (!host.empty() && host[0] == '[') {
+        const char *endipv6 = (const char *)memchr(host.c_str() + 1, ']', host.size() - 1);
+        if (endipv6) {
+            //TODO check out of range
+            if (*(endipv6 + 1) == ':') {
+                service = endipv6 + 2;
+            }
+            node = host.substr(1, endipv6 - host.c_str() - 1);
+        }
+    }
+
+    // 检查 node serivce
+    if (node.empty()) {
+        service = (const char *)memchr(host.c_str(), ':', host.size());
+        if (service) {
+            if (!memchr(service + 1, ':', host.c_str() + host.size() - service - 1)) {
+                node = host.substr(0, service - host.c_str());
+                ++service;
+            }
+        }
+    }
+
+    if (node.empty()) {
+        node = host;
+    }
+    int error = getaddrinfo(node.c_str(), service, &hints, &results);
+    if (error) {
+        LOG_WARN() << "Address::Lookup getaddress(" << host << ", "
+                                  << family << ", " << type << ") err=" << error << " errstr="
+                                  << gai_strerror(error);
+        return false;
+    }
+
+    next = results;
+    while (next) {
+        result.push_back(Create(next->ai_addr, (socklen_t)next->ai_addrlen));
+        // 一个ip/端口可以对应多种接字类型，比如SOCK_STREAM, SOCK_DGRAM, SOCK_RAW，所以这里会返回重复的结果
+        LOG_DEBUG() << "family:" << next->ai_family << ", sock type:" << next->ai_socktype;
+        next = next->ai_next;
+    }
+
+    freeaddrinfo(results);
+
+    return !result.empty();
+}
+
+/**
+* @brief 通过 host 地址返回对应条件的任意 IPAddress
+* @param[in] host 域名,服务器名等.举例: www.sylar.top[:80] (方括号为可选内容)
+* @param[in] family 协议族(AF_INT, AF_INT6, AF_UNIX)
+* @param[in] type socketl类型SOCK_STREAM、SOCK_DGRAM 等
+* @param[in] protocol 协议,IPPROTO_TCP、IPPROTO_UDP 等
+* @return 返回满足条件的任意IPAddress,失败返回nullptr
+*/
+IPAddress::ptr Address::LookupAnyIPAddress(const std::string &host,
+                                           int family, int type, int protocol) {
+    std::vector<Address::ptr> result;
+    if (Lookup(result, host, family, type, protocol)) {
+        for (auto &i : result) {
+            IPAddress::ptr v = std::dynamic_pointer_cast<IPAddress>(i);
+            if (v) {
+                return v;
+            }
+        }
+    }
+    return nullptr;
+}
+
+/**
  * @brief 返回协议簇
  */
 int Address::getFamily() const {
@@ -50,14 +142,6 @@ std::string Address::toString() const {
     insert(ss);
     return ss.str();
 }
-
-/**
- * @brief 比较操作符
- */
-
-// IPAddress::ptr IPAddress::Create(const char *host, uint16_t port) {
-//
-// }
 
 /**
  * @brief 使用点分十进制地址创建IPv4Address
