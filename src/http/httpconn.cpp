@@ -1,7 +1,5 @@
 #include "http/httpconn.h"
 
-//关于类的静态变量为什么要类外初始化的文章
-//https://www.cnblogs.com/lixuejian/p/13215271.html
 const char* HttpConn::srcDir;
 std::atomic<int> HttpConn::userCount;
 bool HttpConn::isET;
@@ -24,7 +22,12 @@ HttpConn::~HttpConn() {
 * @param[in] isKeepAlive 是否保持连接（服务器配置）
 */
 void HttpConn::init(int fd, const sockaddr_in& addr, bool isKeepAlive) {
-    assert(fd > 0);
+
+    if(fd <= 0) {
+        LOG_WARN() << "HttpConn::init fd <= 0";
+        return;
+    }
+
     userCount++;
     addr_ = addr;
     fd_ = fd;
@@ -93,6 +96,7 @@ ssize_t HttpConn::read(int* saveErrno) {
             break;
         }
     } while (isET); // ET:边沿触发要一次性全部读出
+
     return len;
 }
 
@@ -134,6 +138,7 @@ ssize_t HttpConn::write(int* saveErrno) {
         remainLen = iov_[0].iov_len + iov_[1].iov_len;
 
     } while(remainLen > 0);
+
     return len;
 }
 
@@ -144,12 +149,15 @@ ssize_t HttpConn::write(int* saveErrno) {
 bool HttpConn::process() {
     request_.Init();
     if(readBuff_.ReadableBytes() <= 0) {
+        LOG_WARN() << "HTTP 请求中没有数据";
         return false;
     } else if(request_.parse(readBuff_)) {    // 解析成功
+        LOG_INFO() << "解析 HTTP 请求成功";
         LOG_DEBUG() << request_.path();
         response_.Init(srcDir, request_.path(), request_.IsKeepAlive(), 200);
     } else {
         //解析失败
+        LOG_WARN() << "解析 HTTP 请求失败";
         response_.Init(srcDir, request_.path(), false, 400);
     }
 

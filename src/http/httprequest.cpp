@@ -28,8 +28,11 @@ void HttpRequest::Init() {
  */
 bool HttpRequest::parse(Buffer& buff) {
     const char END[] = "\r\n";
-    if(buff.ReadableBytes() == 0)   // 没有可读的字节
+    if(buff.ReadableBytes() == 0) {
+        LOG_WARN() << "没有可读的字节";
         return false;
+    }
+        
     // 读取数据开始
     while(buff.ReadableBytes() && state_ != FINISH) {
         // 从buff中的读指针开始到读指针结束，这块区域是未读取得数据并去处"\r\n"。
@@ -70,6 +73,7 @@ bool HttpRequest::parse(Buffer& buff) {
         // 跳过回车换行
         buff.RetrieveUntil(lineend + 2);        
     }
+
     return true;
 }
 
@@ -103,8 +107,7 @@ bool HttpRequest::ParseRequestLine_(const std::string& line) {
 void HttpRequest::ParsePath_() {
     if(path_ == "/") {
         path_ = "/index.html";
-    } 
-    else {
+    } else {
         // 如果访问 /login，自动补全为 /login.html
         if(DEFAULT_HTML.find(path_) != DEFAULT_HTML.end()) {
             path_ += ".html";
@@ -272,9 +275,6 @@ bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bo
         return false; 
     }
 
-    // j = mysql_num_fields(res);
-    // fields = mysql_fetch_fields(res);
-
     while(MYSQL_ROW row = mysql_fetch_row(res)) {
         LOG_DEBUG() << "MYSQL ROW: " << row[0] << " " << row[1];
         std::string password(row[1]);
@@ -300,13 +300,13 @@ bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bo
         snprintf(order, 256,"INSERT INTO user(username, password) VALUES('%s','%s')", name.c_str(), pwd.c_str());
         LOG_DEBUG() << order;
         if(!conn->Update(order)) { 
-            LOG_DEBUG() << "Insert error!";
+            LOG_ERROR() << "Insert error!";
             flag = false; 
         }
         flag = true;
     }
 
-    LOG_DEBUG() << "UserVerify success!!";
+    LOG_INFO() << "UserVerify success!!";
     return flag;
 }
 

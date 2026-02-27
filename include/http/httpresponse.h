@@ -93,13 +93,13 @@ private:
     int code_;
     bool isKeepAlive_;
 
-    //从解析请求的那里可以知道path_中存的是如：/index.html
+    // 从解析请求的那里可以知道path_中存的是如：/index.html
     std::string path_;
     std::string srcDir_;
     
-    //映射区的内存起始地址
+    // 映射区的内存起始地址
     char* mmFile_;
-    //存储文件的属性
+    // 存储文件的属性
     struct stat mmFileStat_;
 
     static const std::unordered_map<std::string, std::string> SUFFIX_TYPE;  // 后缀类型集

@@ -80,6 +80,11 @@ option(BUILD_TESTS "Build tests" ON)
 - **IO模型**: 正在完善基于协程的 IO 调度，旨在解决传统回调地狱问题，提供同步视角的异步编程体验。
 - **Bug修复**: 修复了中文路径解析问题；修复了 ConnectionPool 析构时的线程安全问题；修复了 HttpServer 编译错误。
 
+## 待完成
+
+- 未提供设置是否用 ET 模式的接口
+- isKeepAlive 的也未进行编写
+
 ## 参考资料
 
 - [TinyWebServer](https://github.com/JehanRio/TinyWebServer)
