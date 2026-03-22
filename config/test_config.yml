@@ -1,0 +1,15 @@
+global:
+    int: 8889
+    float: 3.14
+    string: brand new name
+    int_vec: [4, 5, 6]
+    int_list: [4, 5, 6]
+    int_set: [4, 5, 6]
+    int_unordered_set: [4, 5, 6]
+    map_string2int:
+        key1: 3
+        key2: 4
+    unordered_map_string2int:
+        key1: 3
+        key2: 4
+            

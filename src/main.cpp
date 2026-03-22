@@ -73,7 +73,9 @@ void run() {
 int main() {
 
     // 加载日志配置文件
-    zch::InitLogFromJson("/home/zch/Project/TinyWebserver/config/log_config.json");
+     zch::InitLogFromJson("/home/zch/Project/TinyWebserver/config/log_config.json");
+    //zch::InitLogFromConfig(); // 显示注册监听
+    //zch::Config::LoadFromConfDir("/home/zch/Project/TinyWebserver/config", false);
 
     // 加载服务器配置
     if (!LoadServerConfig(ip, port, resources_dir, timeout, thread_num)) {

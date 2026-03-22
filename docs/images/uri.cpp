@@ -5,7 +5,7 @@
  * @date 2026-02-27
  */
 
-#include "uri.h"
+#include "base/uri.h"
 
 #include <sstream>
 

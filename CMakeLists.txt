@@ -20,6 +20,9 @@ find_package(Threads REQUIRED)
 # find_package(MySQL REQUIRED) # 如果系统没有安装 standard mysql cmake module，可能需要手动指定路径
 # 或者直接链接 mysqlclient (假设库都在标准路径)
 
+# 查找 yaml-cpp
+find_package(yaml-cpp REQUIRED)
+
 # 包含头文件路径
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
@@ -46,6 +49,7 @@ target_link_libraries(TinyWebServerLib
     jsoncpp_lib
     Threads::Threads
     mysqlclient
+    yaml-cpp
 )
 
 # 生成可执行文件

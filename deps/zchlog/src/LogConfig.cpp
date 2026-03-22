@@ -1,12 +1,11 @@
-#include "LogConfig.h"
-#include "Logger.h"
-#include "LogLevel.hpp"
-#include "LogSink.h"
-#include "Log.h"
-
 #include <fstream>
 #include <json/json.h>
 #include <sstream>
+
+#include "LogConfig.h"
+
+// static ConfigVar<std::set<zch::LogDefine>>::ptr g_log_defines =
+//     Config::Lookup("logs", std::set<zch::LogDefine>{}, "zchlog logs config");
 
 /**
  * @brief 解析日志级别
@@ -127,3 +126,111 @@ void zch::InitLogFromJson(const std::string& path) {
         (void)logger;
     }
 }
+
+/*
+template<>
+class LexicalCast<std::string, zch::LogDefine> {
+public:
+    zch::LogDefine operator()(const std::string& v) {
+        YAML::Node n = YAML::Load(v);
+        zch::LogDefine d;
+        d.name = n["name"].as<std::string>();
+        d.level = ParseLevel(n["level"].as<std::string>("DEBUG"));
+        d.logger_type = ParseLoggerType(n["type"].as<std::string>("sync"));
+        d.async_unsafe = n["async_unsafe"].as<bool>(false);
+        d.pattern = n["pattern"].as<std::string>("");
+
+        for (auto a : n["appenders"]) {
+            zch::LogAppenderDefine ad;
+            auto t = a["type"].as<std::string>();
+            if (t == "StdoutLogAppender") {
+                ad.type = 1;
+            } else if (t == "FileLogAppender") { 
+                ad.type = 2; 
+                ad.file = a["file"].as<std::string>(""); 
+            } else if (t == "RollBySizeLogAppender") { 
+                ad.type = 3; 
+                ad.dir = a["dir"].as<std::string>("logs"); 
+                ad.max_size = a["max_size"].as<uint64_t>(1048576); 
+            } else if (t == "RollByTimeLogAppender") { 
+                ad.type = 4; 
+                ad.dir = a["dir"].as<std::string>("logs"); 
+                ad.gap = a["gap"].as<std::string>("day"); 
+            }
+
+            ad.pattern = a["pattern"].as<std::string>("");
+            d.appenders.push_back(ad);
+        }
+
+        return d;
+    }
+};
+
+static zch::Logger::ptr BuildLoggerFromDefine(const zch::LogDefine& d) {
+    std::unique_ptr<zch::LoggerBuilder> builder(new zch::GlobalLoggerBuilder());
+    builder->BuildName(d.name);
+    builder->BuildLevel(d.level);
+    builder->BuildType(d.logger_type);
+
+    if (d.async_unsafe) {
+        builder->BuildEnableUnSafe();
+    }
+
+    if (!d.pattern.empty()) {
+        builder->BuildFormatter(d.pattern);
+    }
+
+    for (auto& a : d.appenders) {
+        if (a.type == 1) {
+            builder->AddLogSink<zch::StdOutSink>();
+        } else if (a.type == 2) {
+            builder->AddLogSink<zch::FileSink>(a.file);
+        } else if (a.type == 3) {
+            builder->AddLogSink<zch::RollBySizeSink>(a.dir, a.max_size);
+        } else if (a.type == 4) {
+            zch::TimeGap gap = (a.gap == "hour") ? zch::TimeGap::GAP_HOUR : zch::TimeGap::GAP_DAY;
+            builder->AddLogSink<zch::RollByTimeSink>(a.dir, gap);
+        }
+    }
+
+    return builder->Build();
+}
+
+// 配置变更回调
+static void OnLogsChanged(const std::set<zch::LogDefine>& oldv,
+                          const std::set<zch::LogDefine>& newv) {
+    // 新增/修改
+    for (auto& d : newv) {
+        auto it = oldv.find(d);
+        if (it == oldv.end()) {
+            // 新增
+            auto lg = BuildLoggerFromDefine(d);
+            zch::LogManager::GetInstance().ReplaceLogger(lg);
+        } else if (!(d == *it)) {
+            // 修改
+            auto lg = BuildLoggerFromDefine(d);
+            zch::LogManager::GetInstance().ReplaceLogger(lg);
+        }
+    }
+
+    // 删除
+    for (auto& d : oldv) {
+        if (newv.find(d) == newv.end()) {
+            zch::LogManager::GetInstance().DelLogger(d.name); // 或置空 sink
+        }
+    }
+}
+
+// 静态初始化器
+struct LogConfigIniter {
+    LogConfigIniter() {
+        g_log_defines->AddListener(OnLogsChanged);
+    }
+};
+static LogConfigIniter __log_cfg_init;
+
+// 对外初始化入口（可空实现，仅保证链接该编译单元）
+void InitLogFromConfig() {
+    // 确保调用点显式表达“启用 Config 驱动日志”
+}
+*/

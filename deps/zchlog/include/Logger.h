@@ -345,6 +345,20 @@ namespace zch {
 			return defaultLogger_;
 		}
 
+        void ReplaceLogger(const Logger::ptr& logger) {
+            std::unique_lock<std::mutex> lk(mtxLogger_);
+            loggers_[logger->GetLoggerName()] = logger;
+        }
+
+        void DelLogger(const std::string& name) {
+            std::unique_lock<std::mutex> lk(mtxLogger_);
+            if (name == "default") {
+                return; // 保护默认 logger（可选）
+            }
+            
+            loggers_.erase(name);
+        }
+
 	private:
 		LogManager() {
 			std::unique_ptr<LoggerBuilder> builder(new LocalLoggerBuilder());
