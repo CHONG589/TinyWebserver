@@ -4,6 +4,8 @@
 #include "coroutine/fiber.h"
 #include "coroutine/scheduler.h"
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 // 全局静态变量，用于生成协程id
 static std::atomic<uint64_t> s_fiber_id{0};
 // 全局静态变量，用于统计当前的协程数
@@ -37,14 +39,14 @@ Fiber::Fiber() {
     m_state = RUNNING;
     // 获取主协程的上下文
     if (getcontext(&m_ctx)) {
-        LOG_ERROR() << "getcontext error!";
+        LOG_ERROR(g_logger) << "getcontext error!";
         assert(false);
     }
 
     ++s_fiber_count;
     m_id = s_fiber_id++;  // 协程 id 从 0 开始，用完加 1
 
-    LOG_DEBUG() << "Main fiber " << m_id << " created!";
+    LOG_DEBUG(g_logger) << "Main fiber " << m_id << " created!";
 }
 
 /**
@@ -63,7 +65,7 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool run_in_scheduler)
     m_stack     = StackAllocator::Alloc(m_stacksize);
 
     if (getcontext(&m_ctx)) {
-        LOG_ERROR() << "getcontext error!";
+        LOG_ERROR(g_logger) << "getcontext error!";
         assert(false);
     }
 
@@ -80,7 +82,7 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool run_in_scheduler)
     // 执行完后自动管理，而不是后面通过用户管理。
     makecontext(&m_ctx, &Fiber::MainFunc, 0);
 
-    LOG_DEBUG() << "Task fiber " << m_id << " created!";
+    LOG_DEBUG(g_logger) << "Task fiber " << m_id << " created!";
 }
 
 /**
@@ -88,12 +90,12 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool run_in_scheduler)
 @ @author zch
 */
 Fiber::~Fiber() {
-    LOG_DEBUG() << "Fiber " << m_id << " destroyed!";
+    LOG_DEBUG(g_logger) << "Fiber " << m_id << " destroyed!";
     --s_fiber_count;
     if (m_stack) {
         // 有栈，说明是子协程，需要确保子协程一定是结束状态
         if (m_state != TERM) {
-            LOG_ERROR() << "Fiber " << m_id << " not TERM state, can't destroy!";
+            LOG_ERROR(g_logger) << "Fiber " << m_id << " not TERM state, can't destroy!";
             assert(false);
         }
         StackAllocator::Dealloc(m_stack, m_stacksize);
@@ -136,20 +138,20 @@ Fiber::ptr Fiber::GetThis() {
 */
 void Fiber::reset(std::function<void()> cb) {
     if (!m_stack) {
-        LOG_ERROR() << "Fiber " << m_id << " want reset(), but m_stack, can't reset()!";
+        LOG_ERROR(g_logger) << "Fiber " << m_id << " want reset(), but m_stack, can't reset()!";
         assert(false);
     }
 
     // 这里为了简化状态管理，强制只有 TERM 状态的协程才可以重置，
     // 但其实刚创建好但没执行过的协程也应该允许重置的
     if (m_state != TERM) {
-        LOG_ERROR() << "Fiber " << m_id << " want reset(), but it not TREM, can't reset()!";
+        LOG_ERROR(g_logger) << "Fiber " << m_id << " want reset(), but it not TREM, can't reset()!";
         assert(false);
     }
 
     m_cb = cb;
     if (getcontext(&m_ctx)) {
-        LOG_ERROR() << "getcontext error!";
+        LOG_ERROR(g_logger) << "getcontext error!";
         assert(false);
     }
 
@@ -168,7 +170,7 @@ void Fiber::reset(std::function<void()> cb) {
 void Fiber::resume() {
     // resume 时协程的状态只能为 READY 
     if (m_state != READY) {
-        LOG_ERROR() << "Fiber " << m_id << " resume not READY, can't resume, resume only is READY!";
+        LOG_ERROR(g_logger) << "Fiber " << m_id << " resume not READY, can't resume, resume only is READY!";
         assert(false);
     }
 
@@ -181,12 +183,12 @@ void Fiber::resume() {
         // 第一个参数为获取调度器协程,m_ctx为调用者的上下文，即调用 resume() 的协程。
         // 使用 swapcontext() 后就切换到调用者的上下文了。
         if (swapcontext(&(Scheduler::GetMainFiber()->m_ctx), &m_ctx)) {
-            LOG_WARN() << "Fiber " << GetFiberId() << " and schedule main fiber swap fail!";
+            LOG_WARN(g_logger) << "Fiber " << GetFiberId() << " and schedule main fiber swap fail!";
             assert(false);
         }
     } else {
         if (swapcontext(&(t_thread_fiber->m_ctx), &m_ctx)) {
-            LOG_WARN() << "Fiber " << GetFiberId() << " and main fiber swap fail!";
+            LOG_WARN(g_logger) << "Fiber " << GetFiberId() << " and main fiber swap fail!";
             assert(false);
         }
     }
@@ -200,7 +202,7 @@ void Fiber::yield() {
     //协程里面的函数执行完后会先将状态置为TERM,所以yield时，状态可以为 TERM
     //也可以为RUNNING，所以就是不能是READY
     if (m_state == READY) {
-        LOG_ERROR() << "Fiber " << m_id << " yield is READY, can't yield, yield not is READY!";
+        LOG_ERROR(g_logger) << "Fiber " << m_id << " yield is READY, can't yield, yield not is READY!";
         assert(false);
     }
 
@@ -214,12 +216,12 @@ void Fiber::yield() {
     // 如果协程参与调度器调度，那么应该和调度器的主协程进行swap，而不是线程主协程
     if (m_runInScheduler) {
         if (swapcontext(&m_ctx, &(Scheduler::GetMainFiber()->m_ctx))) {
-            LOG_WARN() << "Fiber " << GetFiberId() << " and schedule main fiber swap fail!";
+            LOG_WARN(g_logger) << "Fiber " << GetFiberId() << " and schedule main fiber swap fail!";
             assert(false);
         }
     } else {
         if (swapcontext(&m_ctx, &(t_thread_fiber->m_ctx))) {
-            LOG_WARN() << "Fiber " << GetFiberId() << " and main fiber swap fail!";
+            LOG_WARN(g_logger) << "Fiber " << GetFiberId() << " and main fiber swap fail!";
             assert(false);
         }
     }
@@ -232,7 +234,7 @@ void Fiber::yield() {
 void Fiber::MainFunc() {
     Fiber::ptr cur = GetThis();
     if (!cur) {
-        LOG_ERROR() << "Fiber::MainFunc cur is nullptr";
+        LOG_ERROR(g_logger) << "Fiber::MainFunc cur is nullptr";
         assert(false);
     }
 

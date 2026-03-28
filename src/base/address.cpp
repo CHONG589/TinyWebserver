@@ -7,7 +7,8 @@
 
 #include "base/address.h"
 #include "base/endian.h"
-#include "zchlog.h"
+
+static zch::Logger::ptr g_logger = LOG_NAME("system");
 
 /**
  * @brief 通过sockaddr指针创建Address
@@ -86,7 +87,7 @@ bool Address::Lookup(std::vector<Address::ptr> &result, const std::string &host,
     }
     int error = getaddrinfo(node.c_str(), service, &hints, &results);
     if (error) {
-        LOG_WARN() << "Address::Lookup getaddress(" << host << ", "
+        LOG_WARN(g_logger) << "Address::Lookup getaddress(" << host << ", "
                                   << family << ", " << type << ") err=" << error << " errstr="
                                   << gai_strerror(error);
         return false;
@@ -96,7 +97,7 @@ bool Address::Lookup(std::vector<Address::ptr> &result, const std::string &host,
     while (next) {
         result.push_back(Create(next->ai_addr, (socklen_t)next->ai_addrlen));
         // 一个ip/端口可以对应多种接字类型，比如SOCK_STREAM, SOCK_DGRAM, SOCK_RAW，所以这里会返回重复的结果
-        LOG_DEBUG() << "family:" << next->ai_family << ", sock type:" << next->ai_socktype;
+        LOG_DEBUG(g_logger) << "family:" << next->ai_family << ", sock type:" << next->ai_socktype;
         next = next->ai_next;
     }
 
@@ -155,7 +156,7 @@ IPv4Address::ptr IPv4Address::Create(const char *address, uint16_t port) {
     rt->m_addr.sin_port = byteswapOnLittleEndian(port);
     int result = inet_pton(AF_INET, address, &rt->m_addr.sin_addr);
     if(result <= 0) {
-        LOG_WARN() << "IPv4Address::Create() error: " << strerror(errno);
+        LOG_WARN(g_logger) << "IPv4Address::Create() error: " << strerror(errno);
         return nullptr;
     }
     return rt;
@@ -226,7 +227,7 @@ IPv6Address::ptr IPv6Address::Create(const char *address, uint16_t port) {
     rt->m_addr.sin6_port = byteswapOnLittleEndian(port);
     int result = inet_pton(AF_INET6, address, &rt->m_addr.sin6_addr);
     if(result <= 0) {
-        LOG_WARN() << "IPv6Address::Create() error: " << strerror(errno);
+        LOG_WARN(g_logger) << "IPv6Address::Create() error: " << strerror(errno);
         return nullptr;
     }
     return rt;

@@ -7,6 +7,8 @@
 
 std::unordered_map<int, HttpConn> users_;
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 /**
  * @brief 构造函数
  * @param[in] keepalive 是否保持连接
@@ -31,7 +33,7 @@ HttpServer::HttpServer(bool keepalive
     static std::string staticSrcDir;
     staticSrcDir = resources;
     
-    LOG_INFO() << "srcDir: " << staticSrcDir;
+    LOG_INFO(g_logger) << "srcDir: " << staticSrcDir;
     HttpConn::userCount = 0;
     HttpConn::srcDir = staticSrcDir.c_str();
 }
@@ -48,7 +50,7 @@ HttpServer::~HttpServer() {
  * @param[in] client 客户端Socket
  */
 void HttpServer::handleClient(Socket::ptr client) {
-    LOG_DEBUG() << "handleClient " << client->getSocket();
+    LOG_DEBUG(g_logger) << "handleClient " << client->getSocket();
     // 简单实现：读取数据，处理请求，发送响应
     // 实际项目中这里应该是状态机循环
     int client_socket = client->getSocket();
@@ -64,7 +66,7 @@ void HttpServer::handleClient(Socket::ptr client) {
     // 1. 读取请求
     ssize_t readLen = users_[client_socket].read(&errnoNum);
     if(readLen <= 0 && errnoNum != EAGAIN) {
-        LOG_ERROR() << "read error, close client: " << client_socket << " errno=" << errnoNum << " errstr=" << strerror(errnoNum);
+        LOG_ERROR(g_logger) << "read error, close client: " << client_socket << " errno=" << errnoNum << " errstr=" << strerror(errnoNum);
         users_[client_socket].Close();
         return;
     }

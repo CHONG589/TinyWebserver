@@ -8,6 +8,8 @@
 enum EpollCtlOp {
 };
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 /**
 * @brief Construct a new IOManager object
 * @param[in] threads 线程数
@@ -44,11 +46,11 @@ IOManager::IOManager(size_t threads, bool use_caller, const std::string &name)
 
     // 这里直接开启了Schedluer，也就是说IOManager创建即可调度协程
     start();
-    LOG_DEBUG() << "iom_ create end";
+    LOG_DEBUG(g_logger) << "iom_ create end";
 }
 
 IOManager::~IOManager() {
-    LOG_DEBUG() << "~IOManager";
+    LOG_DEBUG(g_logger) << "~IOManager";
 
     stop();
     close(m_epfd);
@@ -88,7 +90,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
     // 同一个fd不允许重复添加相同的事件
     FdContext::MutexType::Lock lock2(fd_ctx->mutex);
     if (fd_ctx->events & event) {
-        LOG_WARN() << "IOManager::addEvent same event added, event = " << (EPOLL_EVENTS)event << ", fd_ctx.events = " << (EPOLL_EVENTS)fd_ctx->events;
+        LOG_WARN(g_logger) << "IOManager::addEvent same event added, event = " << (EPOLL_EVENTS)event << ", fd_ctx.events = " << (EPOLL_EVENTS)fd_ctx->events;
         assert(!(fd_ctx->events & event));
     }
 
@@ -102,7 +104,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
 
     int rt = epoll_ctl(m_epfd, op, fd, &epevent);
     if (rt) {
-        LOG_ERROR() << "IOManager::addEvent epoll_ctl add event False, fd = " << fd << " error=" << strerror(errno);
+        LOG_ERROR(g_logger) << "IOManager::addEvent epoll_ctl add event False, fd = " << fd << " error=" << strerror(errno);
         return -1;
     }
     // setnonblocking(fd);
@@ -127,7 +129,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
         assert(event_ctx.fiber->getState() == Fiber::RUNNING);
     }
 
-    LOG_DEBUG() << "Add event fd = " << fd_ctx->fd;
+    LOG_DEBUG(g_logger) << "Add event fd = " << fd_ctx->fd;
     return 0;
 }
 
@@ -162,7 +164,7 @@ bool IOManager::delEvent(int fd, Event event) {
     // 删除后要将剩下的重新注册上去
     int rt = epoll_ctl(m_epfd, op, fd, &epevent);
     if (rt) {
-        LOG_WARN() << "IOManager::delEvent false, fd = " << fd << ", event = " << event;
+        LOG_WARN(g_logger) << "IOManager::delEvent false, fd = " << fd << ", event = " << event;
         return false;
     }
 
@@ -193,7 +195,7 @@ bool IOManager::cancelEvent(int fd, Event event) {
 
     FdContext::MutexType::Lock lock2(fd_ctx->mutex);
     if (!(fd_ctx->events & event)) {
-        LOG_WARN() << "IOManager::cancelEvent false, fd = " << fd;
+        LOG_WARN(g_logger) << "IOManager::cancelEvent false, fd = " << fd;
         fd_ctx->mutex.unlock();
         return false;
     }
@@ -206,7 +208,7 @@ bool IOManager::cancelEvent(int fd, Event event) {
     epevent.data.ptr = fd_ctx;
     int rt = epoll_ctl(m_epfd, op, fd, &epevent);
     if (rt) {
-        LOG_WARN() << "IOManager::cancelEvent false, fd = " << fd << ", event = " << event;
+        LOG_WARN(g_logger) << "IOManager::cancelEvent false, fd = " << fd << ", event = " << event;
         return false;
     }
 
@@ -242,7 +244,7 @@ bool IOManager::cancelAll(int fd) {
     epevent.data.ptr = fd_ctx;
     int rt = epoll_ctl(m_epfd, op, fd, &epevent);
     if (rt) {
-        LOG_WARN() << "IOManager::cancelAll false, fd = " << fd;
+        LOG_WARN(g_logger) << "IOManager::cancelAll false, fd = " << fd;
         fd_ctx->mutex.unlock();
         return false;
     }
@@ -290,7 +292,7 @@ int IOManager::setnonblocking(int fd) {
 * 退出，待idle协程yield,之后Scheduler::run就可以调度其他任务
 */
 void IOManager::tickle() {
-    LOG_DEBUG() << "IOManager::tickle...";
+    LOG_DEBUG(g_logger) << "IOManager::tickle...";
 
     // 至于schedule::tickle()为啥什么都没做，都可以起到通知的作用，
     // 因为它的idle协程和run函数不断切换，也就是在resume和yield之间
@@ -368,7 +370,7 @@ IOManager::FdContext::EventContext &IOManager::FdContext::getEventContext(IOMana
     case IOManager::WRITE:
         return write;
     default:
-        LOG_WARN() << "IOManager::getEventContext event False";
+        LOG_WARN(g_logger) << "IOManager::getEventContext event False";
         assert(false);
     }
     throw std::invalid_argument("getContext invalid event");
@@ -434,7 +436,7 @@ void IOManager::idle() {
         uint64_t next_timeout = 0;
         if (stopping()) {
             // 当前调度器停止，且当前等待执行的IO事件数量为0
-            LOG_WARN() << "IOManager::idle name = " << getName().c_str() << ", idle stopping exit";
+            LOG_WARN(g_logger) << "IOManager::idle name = " << getName().c_str() << ", idle stopping exit";
             break;
         }
         int rt = 0;
@@ -455,7 +457,7 @@ void IOManager::idle() {
                 if(errno == EINTR) {
                     continue;
                 }
-                LOG_WARN() << "IOManager::idle, epoll_wait fd = " << m_epfd << "rt = " << rt << ", error = " << strerror(errno);
+                LOG_WARN(g_logger) << "IOManager::idle, epoll_wait fd = " << m_epfd << "rt = " << rt << ", error = " << strerror(errno);
                 break;
             } else {
                 break;
@@ -520,7 +522,7 @@ void IOManager::idle() {
             // 重新注册进去
             int rt2 = epoll_ctl(m_epfd, op, fd_ctx->fd, &event);
             if (rt2) {
-                LOG_WARN() << "IOManager::idle left_events false, epfd = " << m_epfd << "fd = " << fd_ctx->fd << ", error = " << strerror(errno);
+                LOG_WARN(g_logger) << "IOManager::idle left_events false, epfd = " << m_epfd << "fd = " << fd_ctx->fd << ", error = " << strerror(errno);
                 continue;
             }
 

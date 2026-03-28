@@ -19,6 +19,8 @@
 #include <vector>
 #include <map>
 
+#include "log.h"
+
 class IPAddress;
 
 /**

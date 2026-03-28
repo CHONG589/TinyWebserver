@@ -7,6 +7,8 @@
 #include <json/json.h>
 #include "db/ConnectionPool.h"
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 /**
  * @brief 获取连接池单例
  * 说明：C++11 之后静态局部变量初始化是线程安全的
@@ -56,7 +58,7 @@ ConnectionPool::ConnectionPool() {
 
     // 加载 JSON 配置文件
     if (!LoadConfigFile()) {
-        LOG_ERROR() << "load db_config.json failed";
+        LOG_ERROR(g_logger) << "load db_config.json failed";
         return;
     }
 
@@ -105,19 +107,19 @@ bool ConnectionPool::LoadConfigFile() {
     // 从 JSON 文件加载配置；相对路径依赖于可执行文件的工作目录
     std::ifstream ifs("/home/zch/Project/TinyWebserver/config/db_config.json");
     if (!ifs.is_open()) {
-        LOG_ERROR() << "open json file failed: /home/zch/Project/TinyWebserver/config/db_config.json";
+        LOG_ERROR(g_logger) << "open json file failed: /home/zch/Project/TinyWebserver/config/db_config.json";
         return false;
     }
     
     Json::Reader reader;
     Json::Value js;
     if (!reader.parse(ifs, js)) {
-        LOG_ERROR() << "JSON parse error";
+        LOG_ERROR(g_logger) << "JSON parse error";
         return false;
     }
 
     if (!js.isObject()) {
-        LOG_ERROR() << "JSON is NOT Object";
+        LOG_ERROR(g_logger) << "JSON is NOT Object";
         return false;
     }
     // 字段类型校验，保证配置的健壮性
@@ -130,7 +132,7 @@ bool ConnectionPool::LoadConfigFile() {
         !js["maxSize"].isIntegral() ||
         !js["maxIdleTime"].isIntegral() ||
         !js["timeout"].isIntegral()) {
-        LOG_ERROR() << "JSON The data type does not match";
+        LOG_ERROR(g_logger) << "JSON The data type does not match";
         return false;
     }
     m_ip = js["ip"].asString();

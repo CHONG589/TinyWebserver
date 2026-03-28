@@ -10,6 +10,11 @@
 #include <unistd.h>
 
 #include "base/config.h"
+#include "base/log.h"
+
+namespace zch {
+
+static zch::Logger::ptr g_logger = LOG_ROOT();
 
 ConfigVarBase::ptr Config::LookupBase(const std::string &name) {
     RWMutexType::ReadLock lock(GetMutex());
@@ -21,7 +26,7 @@ static void ListAllMember(const std::string &prefix, const YAML::Node &node,
                 std::list<std::pair<std::string, const YAML::Node>> &output) {
     
     if (prefix.find_first_not_of("abcdefghikjlmnopqrstuvwxyz._012345678") != std::string::npos) {
-        LOG_ERROR() << "Config invalid name: " << prefix << " : " << node;
+        LOG_ERROR(g_logger) << "Config invalid name: " << prefix << " : " << node;
         return;
     }
 
@@ -80,9 +85,9 @@ void Config::LoadFromConfDir(const std::string &path, bool force) {
         try {
             YAML::Node root = YAML::LoadFile(i);
             LoadFromYaml(root);
-            LOG_INFO() << "LoadConfFile file=" << i << " ok";
+            LOG_INFO(g_logger) << "LoadConfFile file=" << i << " ok";
         } catch (...) {
-            LOG_ERROR() << "LoadConfFile file=" << i << " failed";
+            LOG_ERROR(g_logger) << "LoadConfFile file=" << i << " failed";
         }
     }
 }
@@ -93,4 +98,6 @@ void Config::Visit(std::function<void(ConfigVarBase::ptr)> cb) {
     for (auto it = m.begin(); it != m.end(); ++it) {
         cb(it->second);
     }
+}
+
 }

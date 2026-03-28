@@ -26,12 +26,10 @@ find_package(yaml-cpp REQUIRED)
 # 包含头文件路径
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/deps/zchlog  # zchlog 在 deps 目录
 )
 
 # 添加子目录
 add_subdirectory(deps/jsoncpp)
-add_subdirectory(deps/zchlog)
 
 # 收集源文件（排除 main.cpp 用于创建库）
 file(GLOB_RECURSE LIB_SRC_FILES
@@ -45,7 +43,6 @@ file(GLOB_RECURSE LIB_SRC_FILES
 add_library(TinyWebServerLib STATIC ${LIB_SRC_FILES})
 target_link_libraries(TinyWebServerLib
     PUBLIC
-    zchlog
     jsoncpp_lib
     Threads::Threads
     mysqlclient

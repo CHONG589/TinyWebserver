@@ -3,6 +3,8 @@
 static thread_local Thread *t_thread          = nullptr;
 static thread_local std::string t_thread_name = "UNKNOW";
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 Thread *Thread::GetThis() {
     return t_thread;
 }

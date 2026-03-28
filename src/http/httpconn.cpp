@@ -4,6 +4,8 @@ const char* HttpConn::srcDir;
 std::atomic<int> HttpConn::userCount;
 bool HttpConn::isET;
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 HttpConn::HttpConn() { 
     fd_ = -1;
     addr_ = { 0 };
@@ -24,7 +26,7 @@ HttpConn::~HttpConn() {
 void HttpConn::init(int fd, const sockaddr_in& addr, bool isKeepAlive) {
 
     if(fd <= 0) {
-        LOG_WARN() << "HttpConn::init fd <= 0";
+        LOG_WARN(g_logger) << "HttpConn::init fd <= 0";
         return;
     }
 
@@ -35,7 +37,7 @@ void HttpConn::init(int fd, const sockaddr_in& addr, bool isKeepAlive) {
     writeBuff_.RetrieveAll();
     readBuff_.RetrieveAll();
     isClose_ = false;
-    LOG_DEBUG() << "Client[" << fd_ << "]" << " in, userCount:" << userCount;
+    LOG_DEBUG(g_logger) << "Client[" << fd_ << "]" << " in, userCount:" << userCount;
 }
 
 /**
@@ -47,7 +49,7 @@ void HttpConn::Close() {
         isClose_ = true; 
         userCount--;
         close(fd_);
-        LOG_DEBUG() << "Client[" << fd_ << "]" << " quit, UserCount:" << userCount;
+        LOG_DEBUG(g_logger) << "Client[" << fd_ << "]" << " quit, UserCount:" << userCount;
     }
 }
 
@@ -149,15 +151,15 @@ ssize_t HttpConn::write(int* saveErrno) {
 bool HttpConn::process() {
     request_.Init();
     if(readBuff_.ReadableBytes() <= 0) {
-        LOG_WARN() << "HTTP 请求中没有数据";
+        LOG_WARN(g_logger) << "HTTP 请求中没有数据";
         return false;
     } else if(request_.parse(readBuff_)) {    // 解析成功
-        LOG_INFO() << "解析 HTTP 请求成功";
-        LOG_DEBUG() << request_.path();
+        LOG_INFO(g_logger) << "解析 HTTP 请求成功";
+        LOG_DEBUG(g_logger) << request_.path();
         response_.Init(srcDir, request_.path(), request_.IsKeepAlive(), 200);
     } else {
         //解析失败
-        LOG_WARN() << "解析 HTTP 请求失败";
+        LOG_WARN(g_logger) << "解析 HTTP 请求失败";
         response_.Init(srcDir, request_.path(), false, 400);
     }
 

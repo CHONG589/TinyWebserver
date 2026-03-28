@@ -1,18 +1,14 @@
 logs:
-  - name: root
-    level: INFO
-    type: async
-    async_unsafe: false
-    pattern: "[%d{%Y-%m-%d %H:%M:%S}][%p][%f:%l]%m%n"
-    appenders:
-      - type: StdoutLogAppender
-      - type: RollByTimeLogAppender
-        dir: /home/zch/Project/zchlog/logs
-        gap: day
-
-  - name: zchlog
-    level: DEBUG
-    type: sync
-    appenders:
-      - type: FileLogAppender
-        file: /home/zch/Project/zchlog/logs/zchlog.log
+    - name: root
+      level: debug
+      appenders:
+          - type: StdoutLogAppender
+            pattern: "[%d{%Y-%m-%d %H:%M:%S}][%rms][%p][%c][%f:%l] %m%n"
+          - type: FileLogAppender
+            file: /home/zch/Project/TinyWebserver/logs/root.log 
+    - name: system
+      level: debug
+      appenders:
+          - type: StdoutLogAppender
+          - type: FileLogAppender
+            file: /home/zch/Project/logs/system.log

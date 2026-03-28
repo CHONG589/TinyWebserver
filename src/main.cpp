@@ -6,7 +6,7 @@
 #include "base/address.h"
 #include "base/http_server.h"
 #include "http/httprequest.h"
-#include "zchlog.h"
+#include "base/config.h"
 
 static std::string ip = "0.0.0.0";
 static int port = 8000;
@@ -14,23 +14,25 @@ static std::string resources_dir;
 static uint64_t timeout = 120000;
 static int thread_num = 4;
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 // 加载服务器配置
 bool LoadServerConfig(std::string& ip, int& port, std::string& resources_dir, uint64_t& timeout, int& thread_num) {
     std::ifstream ifs("/home/zch/Project/TinyWebserver/config/server.json");
     if (!ifs.is_open()) {
-        LOG_ERROR() << "Open server config failed: /home/zch/Project/TinyWebserver/config/server.json";
+        LOG_ERROR(g_logger) << "Open server config failed: /home/zch/Project/TinyWebserver/config/server.json";
         return false;
     }
     
     Json::Reader reader;
     Json::Value root;
     if (!reader.parse(ifs, root)) {
-        LOG_ERROR() << "Parse server config failed";
+        LOG_ERROR(g_logger) << "Parse server config failed";
         return false;
     }
     
     if (!root.isMember("server")) {
-        LOG_ERROR() << "Config root 'server' not found";
+        LOG_ERROR(g_logger) << "Config root 'server' not found";
         return false;
     }
     
@@ -46,12 +48,14 @@ bool LoadServerConfig(std::string& ip, int& port, std::string& resources_dir, ui
 
 void run() {
     
-    LOG_INFO() << "Server starting...";
+    LOG_INFO(g_logger) << "Server starting...";
+
+    zch::Config::LoadFromConfDir("/home/zch/Project/TinyWebserver/config");
 
     // 绑定所有网卡的指定端口
     Address::ptr addr = IPv4Address::Create(ip.c_str(), port);
     if(!addr) {
-        LOG_ERROR() << "Create address failed";
+        LOG_ERROR(g_logger) << "Create address failed";
         return;
     }
 
@@ -61,29 +65,29 @@ void run() {
     
     // 绑定地址
     while(!server->bind(addr)) {
-        LOG_ERROR() << "Bind failed, retrying in 2s...";
+        LOG_ERROR(g_logger) << "Bind failed, retrying in 2s...";
         sleep(2);
     }
     
     // 启动服务器
-    LOG_INFO() << "Bind success " << *addr;
+    LOG_INFO(g_logger) << "Bind success " << *addr;
     server->start();
 }
 
 int main() {
 
     // 加载日志配置文件
-     zch::InitLogFromJson("/home/zch/Project/TinyWebserver/config/log_config.json");
+    // zch::InitLogFromJson("/home/zch/Project/TinyWebserver/config/log_config.json");
     //zch::InitLogFromConfig(); // 显示注册监听
-    //zch::Config::LoadFromConfDir("/home/zch/Project/TinyWebserver/config", false);
+    zch::Config::LoadFromConfDir("/home/zch/Project/TinyWebserver/config", false);
 
     // 加载服务器配置
     if (!LoadServerConfig(ip, port, resources_dir, timeout, thread_num)) {
-        LOG_WARN() << "Load server config failed, using default";
+        LOG_WARN(g_logger) << "Load server config failed, using default";
         resources_dir = "/home/zch/Project/TinyWebserver/resources";
     }
     
-    LOG_INFO() << "Config loaded - IP: " << ip << ", Port: " << port 
+    LOG_INFO(g_logger) << "Config loaded - IP: " << ip << ", Port: " << port 
                 << ", Resources: " << resources_dir << ", Timeout: " 
                 << timeout << "ms, Threads: " << thread_num;
 

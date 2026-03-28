@@ -1,6 +1,8 @@
 #include "base/tcp_server.h"
 #include "base/http_server.h"
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 /**
  * @brief 构造函数
  * @param[in] io_worker socket工作的调度器
@@ -48,13 +50,13 @@ bool TcpServer::bind(const std::vector<Address::ptr> &addrs
     for(auto &addr : addrs) {
         Socket::ptr sock = Socket::CreateTCP(addr);
         if(!sock->bind(addr)) {
-            LOG_ERROR() << "bind fail errno = " << errno << ", errstr = " << strerror(errno);
+            LOG_ERROR(g_logger) << "bind fail errno = " << errno << ", errstr = " << strerror(errno);
             fails.push_back(addr);
             continue;
         }
 
         if(!sock->listen()) {
-            LOG_ERROR() << "listen fail errno = " << errno << ", errstr = " << strerror(errno);
+            LOG_ERROR(g_logger) << "listen fail errno = " << errno << ", errstr = " << strerror(errno);
             fails.push_back(addr);
             continue;
         }
@@ -67,7 +69,7 @@ bool TcpServer::bind(const std::vector<Address::ptr> &addrs
     }
 
     for(auto &i : m_socks) {
-        LOG_INFO() << "type=" << m_type << " name=" << m_name << " server bind success: " << *i->getLocalAddress();
+        LOG_INFO(g_logger) << "type=" << m_type << " name=" << m_name << " server bind success: " << *i->getLocalAddress();
     }
     return true;
 }
@@ -109,7 +111,7 @@ void TcpServer::stop() {
  * @param[in] client 新连接的socket
  */
 void TcpServer::handleClient(Socket::ptr client) {
-    LOG_DEBUG() << "handleClient: " << client->getSocket();
+    LOG_DEBUG(g_logger) << "handleClient: " << client->getSocket();
 }
 
 /**

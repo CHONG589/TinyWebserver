@@ -21,8 +21,10 @@
 #include <functional>
 
 #include "mutex.h"
-#include "zchlog.h"
 #include "util.h"
+#include "log.h"
+
+namespace zch {
 
 /**
  * @brief 配置变量的基类
@@ -354,9 +356,9 @@ public:
             RWMutexType::ReadLock lock(m_mutex);
             return ToStr()(m_val);
         } catch (std::exception &e) {
-            LOG_ERROR() << "ConfigVar::toString exception " << e.what() 
-                        << " convert: " << TypeToName<T>() << " to string"
-                        << " name=" << m_name;
+            // LOG_ERROR(g_logger) << "ConfigVar::toString exception " << e.what() 
+            //             << " convert: " << TypeToName<T>() << " to string"
+            //             << " name=" << m_name;
         }
         return "";
     }
@@ -369,9 +371,9 @@ public:
         try {
             SetValue(FromStr()(val));
         } catch (std::exception &e) {
-            LOG_ERROR() << "ConfigVar::fromString exception "
-                        << e.what() << " convert: string to " << TypeToName<T>()
-                        << " name=" << m_name << " - " << val;
+            // LOG_ERROR(g_logger) << "ConfigVar::fromString exception "
+            //             << e.what() << " convert: string to " << TypeToName<T>()
+            //             << " name=" << m_name << " - " << val;
         }
         return false;
     }
@@ -482,18 +484,18 @@ public:
         if (it != GetDatas().end()) {
             auto tmp = std::dynamic_pointer_cast<ConfigVar<T>>(it->second);
             if (tmp) {
-                LOG_INFO() << "Lookup name=" << name << " exists";
+                //LOG_INFO(g_logger) << "Lookup name=" << name << " exists";
                 return tmp;
             } else {
-                LOG_ERROR() << "Lookup name=" << name << " exists but type not "
-                            << TypeToName<T>() << " real_type=" << it->second->GetTypeName()
-                            << " " << it->second->ToString();
+                // LOG_ERROR(g_logger) << "Lookup name=" << name << " exists but type not "
+                //             << TypeToName<T>() << " real_type=" << it->second->GetTypeName()
+                //             << " " << it->second->ToString();
                 return nullptr;
             }
         }
 
         if (name.find_first_not_of("abcdefghikjlmnopqrstuvwxyz._012345678") != std::string::npos) {
-            LOG_ERROR() << "Lookup name invalid " << name;
+            //LOG_ERROR(g_logger) << "Lookup name invalid " << name;
             throw std::invalid_argument(name);
         }
 
@@ -557,5 +559,7 @@ private:
         return s_mutex;
     }
 };
+
+}
 
 #endif
