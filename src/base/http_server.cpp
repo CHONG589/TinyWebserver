@@ -9,6 +9,10 @@ std::unordered_map<int, HttpConn> users_;
 
 static zch::Logger::ptr g_logger = LOG_NAME("system");
 
+static zch::ConfigVar<std::string>::ptr g_tcp_server_resource_dir =
+    zch::Config::Lookup("server.resources_dir", std::string("/home/zch/Project/TinyWebserver/resources"),
+            "http server resources dir");
+
 /**
  * @brief 构造函数
  * @param[in] keepalive 是否保持连接
@@ -17,7 +21,6 @@ static zch::Logger::ptr g_logger = LOG_NAME("system");
  * @param[in] accept_worker 接收连接调度器
  */
 HttpServer::HttpServer(bool keepalive
-                     , const std::string& resources_dir
                      , IOManager *worker
                      , IOManager *io_worker
                      , IOManager *accept_worker)
@@ -25,7 +28,7 @@ HttpServer::HttpServer(bool keepalive
                      , m_isKeepalive(keepalive) {
     
     // 使用传入的 resources_dir
-    std::string resources = resources_dir;
+    std::string resources = g_tcp_server_resource_dir->GetValue();
     
     // 分配内存并复制路径（注意：HttpConn::srcDir 是 const char*，需要持久的内存）
     // 这里简单处理，使用静态或堆分配。由于 HttpConn::srcDir 是静态指针，

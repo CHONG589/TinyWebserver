@@ -33,7 +33,6 @@ public:
      * @param[in] accept_worker 接收连接调度器
      */
     HttpServer(bool keepalive = true
-               , const std::string& resources_dir = "./resources"
                , IOManager *worker = IOManager::GetThis()
                , IOManager *io_worker = IOManager::GetThis()
                , IOManager *accept_worker = IOManager::GetThis());

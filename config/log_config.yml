@@ -11,4 +11,4 @@ logs:
       appenders:
           - type: StdoutLogAppender
           - type: FileLogAppender
-            file: /home/zch/Project/logs/system.log
+            file: /home/zch/Project/TinyWebserver/logs/system.log

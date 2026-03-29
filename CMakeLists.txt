@@ -29,7 +29,7 @@ include_directories(
 )
 
 # 添加子目录
-add_subdirectory(deps/jsoncpp)
+# add_subdirectory(deps/jsoncpp)
 
 # 收集源文件（排除 main.cpp 用于创建库）
 file(GLOB_RECURSE LIB_SRC_FILES
@@ -43,7 +43,7 @@ file(GLOB_RECURSE LIB_SRC_FILES
 add_library(TinyWebServerLib STATIC ${LIB_SRC_FILES})
 target_link_libraries(TinyWebServerLib
     PUBLIC
-    jsoncpp_lib
+#    jsoncpp_lib
     Threads::Threads
     mysqlclient
     yaml-cpp

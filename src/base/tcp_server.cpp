@@ -1,7 +1,12 @@
 #include "base/tcp_server.h"
 #include "base/http_server.h"
+#include "base/config.h"
 
 static zch::Logger::ptr g_logger = LOG_NAME("system");
+
+static zch::ConfigVar<uint64_t>::ptr g_tcp_server_read_timeout =
+    zch::Config::Lookup("server.read_timeout", (uint64_t)(60 * 1000 * 2),
+            "tcp server read timeout");
 
 /**
  * @brief 构造函数
@@ -11,7 +16,7 @@ static zch::Logger::ptr g_logger = LOG_NAME("system");
 TcpServer::TcpServer(IOManager *io_worker, IOManager *accept_worker)
     : m_ioWorker(io_worker)
     , m_acceptWorker(accept_worker)
-    , m_recvTimeout((uint64_t)(60 * 1000 * 2))
+    , m_recvTimeout(g_tcp_server_read_timeout->GetValue())
     , m_name("zch/1.0.0")
     , m_type("tcp")
     , m_isStop(true) {

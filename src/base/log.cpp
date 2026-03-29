@@ -373,12 +373,14 @@ FileLogAppender::FileLogAppender(const std::string &file)
 void FileLogAppender::Log(LogEvent::ptr event) {
     uint64_t now = event->GetTime();
     if(now >= (m_lastTime + 3)) {
+        FSUtil::MakeSurePathExist(m_filename);
         ReOpen();
         if(m_reopenError) {
             std::cout << "reopen file " << m_filename << " error" << std::endl;
         }
         m_lastTime = now;
     }
+
     if(m_reopenError) {
         return;
     }

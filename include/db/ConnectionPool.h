@@ -51,13 +51,6 @@ private:
     ConnectionPool();
 
     /**
-     * @brief 加载 JSON 配置文件
-     * @return 成功返回 true，失败返回 false
-     * 说明：校验每个字段的类型有效性，并设置池参数与数据库连接信息
-     */
-    bool LoadConfigFile();
-
-    /**
      * @brief 连接生产者任务（独立线程）
      * - 当队列大小小于 m_minSize 且总连接数未达到 m_maxSize 时创建新连接
      * - 与消费者通过条件变量协作，避免忙等

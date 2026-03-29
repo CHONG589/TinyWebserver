@@ -41,6 +41,20 @@ public:
      * @param[in] subfix 后缀名，比如 ".yml"
      */
     static void ListAllFile(std::vector<std::string> &files, const std::string &path, const std::string &subfix);
+
+    /** 
+     * @brief 判断文件或目录是否存在
+     * @param[in] path 路径
+     * @return bool 存在返回 true，否则 false
+     */
+    static bool IsExist(const std::string& path);
+
+    /** 
+     * @brief 确保路径存在，存在则跳过，不存在则创建
+     * @param[in] path 目录路径
+     * @return void
+     */
+    static void MakeSurePathExist(const std::string& path);
 };
 
 #endif
