@@ -9,6 +9,8 @@
 
 #include <sstream>
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 /**
  * @brief 创建 Uri 对象
  * @param[in] uri uri 字符串
@@ -21,7 +23,7 @@ Uri::ptr Uri::Create(const std::string &urlStr) {
 
     // 解析 url 字符串
     if (http_parser_parse_url(urlStr.c_str(), urlStr.length(), 0, &parser) != 0) {
-        LOG_WARN() << "http_parser_parse_url failed, urlStr: " << urlStr;
+        LOG_WARN(g_logger) << "http_parser_parse_url failed, urlStr: " << urlStr;
         return nullptr;
     }
 
@@ -34,29 +36,25 @@ Uri::ptr Uri::Create(const std::string &urlStr) {
     // .off (Offset) ：协议字符串在原始 urlStr 中的起始偏移量。
     // .len (Length) ：协议字符串的长度。
     if (parser.field_set & (1 << UF_SCHEMA)) {
-        uri->SetScheme(
-            std::string(urlStr.c_str() + parser.field_data[UF_SCHEMA].off,
+        uri->SetScheme(std::string(urlStr.c_str() + parser.field_data[UF_SCHEMA].off,
                         parser.field_data[UF_SCHEMA].len));
     }
 
     // 检查 userInfo 是否存在，和提取内容
     if (parser.field_set & (1 << UF_USERINFO)) {
-        uri->SetUserInfo(
-            std::string(urlStr.c_str() + parser.field_data[UF_USERINFO].off,
+        uri->SetUserInfo(std::string(urlStr.c_str() + parser.field_data[UF_USERINFO].off,
                         parser.field_data[UF_USERINFO].len));
     }
 
     // 检查 host 是否存在，和提取内容
     if (parser.field_set & (1 << UF_HOST)) {
-        uri->SetHost(
-            std::string(urlStr.c_str() + parser.field_data[UF_HOST].off,
+        uri->SetHost(std::string(urlStr.c_str() + parser.field_data[UF_HOST].off,
                         parser.field_data[UF_HOST].len));
     }
 
     // 检查 port 是否存在，和提取内容
     if (parser.field_set & (1 << UF_PORT)) {
-        uri->SetPort(std::stoi(
-            std::string(urlStr.c_str() + parser.field_data[UF_PORT].off,
+        uri->SetPort(std::stoi(std::string(urlStr.c_str() + parser.field_data[UF_PORT].off,
                         parser.field_data[UF_PORT].len)));
     } else {
         // 默认端口号解析只支持 http/ws/https
@@ -69,22 +67,19 @@ Uri::ptr Uri::Create(const std::string &urlStr) {
 
     // 检查 path 是否存在，和提取内容
     if (parser.field_set & (1 << UF_PATH)) {
-        uri->SetPath(
-            std::string(urlStr.c_str() + parser.field_data[UF_PATH].off,
+        uri->SetPath(std::string(urlStr.c_str() + parser.field_data[UF_PATH].off,
                         parser.field_data[UF_PATH].len));
     }
 
     // 检查 query 是否存在，和提取内容
     if (parser.field_set & (1 << UF_QUERY)) {
-        uri->SetQuery(
-            std::string(urlStr.c_str() + parser.field_data[UF_QUERY].off,
+        uri->SetQuery(std::string(urlStr.c_str() + parser.field_data[UF_QUERY].off,
                         parser.field_data[UF_QUERY].len));
     }
 
     // 检查 fragment 是否存在，和提取内容
     if (parser.field_set & (1 << UF_FRAGMENT)) {
-        uri->SetFragment(
-            std::string(urlStr.c_str() + parser.field_data[UF_FRAGMENT].off,
+        uri->SetFragment(std::string(urlStr.c_str() + parser.field_data[UF_FRAGMENT].off,
                         parser.field_data[UF_FRAGMENT].len));
     }
 

@@ -14,6 +14,7 @@
 
 #include "address.h"
 #include "http/http-parser/http_parser.h"
+#include "log.h"
 
 /*
      foo://user@sylar.com:8042/over/there?name=ferret#nose
@@ -77,10 +78,16 @@ public:
     int32_t GetPort() const;
 
     /**
+     * @brief 设置scheme
+     * @param v scheme
+     */
+    void SetScheme(const std::string& v) { m_scheme = v;}
+
+    /**
      * @brief 设置用户信息
      * @param[in] v 用户信息
      */
-    void SetUserinfo(const std::string& v) { m_userInfo = v;}
+    void SetUserInfo(const std::string& v) { m_userInfo = v;}
 
     /**
      * @brief 设置host信息
