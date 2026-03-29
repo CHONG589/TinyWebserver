@@ -377,6 +377,19 @@ public:
      */
     std::string ToYamlString() override;
 
+    /** 
+     * @brief 创建新文件
+     * @return void
+     */
+    void CreateNewFile();
+
+    /** 
+     * @brief 根据时间生成文件名
+     * @param[in] t 时间结构体
+     * @return std::string 文件名
+     */
+    std::string GetFileName(const struct tm& t);
+
 private:
     // 文件路径
     std::string m_filename;
@@ -386,6 +399,8 @@ private:
     uint64_t m_lastTime = 0;
     // 文件打开错误标识
     bool m_reopenError = false;
+    // 记录当前文件所属日期
+    time_t m_curData; 
 };
 
 /**

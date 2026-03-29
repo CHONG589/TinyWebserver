@@ -371,9 +371,17 @@ FileLogAppender::FileLogAppender(const std::string &file)
  * 如果一个日志事件距离上次写日志超过3秒，那就重新打开一次日志文件
  */
 void FileLogAppender::Log(LogEvent::ptr event) {
+    // 确保该路径存在
+    FSUtil::MakeSurePathExist(m_filename);
+
     uint64_t now = event->GetTime();
+    time_t curDay = (now / (24 * 60 * 60));
+    if (curDay != m_curData) {
+        // 当前写入的文件日期与当前日期不符合，关闭旧文件，开启新文件
+        CreateNewFile();
+    }
+
     if(now >= (m_lastTime + 3)) {
-        FSUtil::MakeSurePathExist(m_filename);
         ReOpen();
         if(m_reopenError) {
             std::cout << "reopen file " << m_filename << " error" << std::endl;
@@ -395,6 +403,39 @@ void FileLogAppender::Log(LogEvent::ptr event) {
              std::cout << "[ERROR] FileLogAppender::log() format error" << std::endl;
          }
     }  
+}
+
+void zch::FileLogAppender::CreateNewFile() {
+    if (m_filestream.is_open()) {
+        m_filestream.close();
+    }
+
+    // 获取当前时间用于生成文件名
+    time_t t_now = Date::Now();
+    struct tm t;
+    Date::LocalTime(&t_now, &t);
+    
+    // 记录当前日志文件的日期
+    m_curData = (t_now / (24 * 60 * 60));
+    
+    m_filename = GetFileName(t);
+    m_filestream.open(m_filename, std::ios::binary | std::ios::app);
+    assert(m_filestream.is_open());
+}
+
+std::string zch::FileLogAppender::GetFileName(const struct tm& t) {
+    std::stringstream ssm;
+    if (!m_filename.empty()) {
+        ssm << m_filename;
+        if (m_filename.back() != '/' && m_filename.back() != '\\') {
+            ssm << '/';
+        }
+    }
+
+    ssm << t.tm_year + 1900 << "-" << t.tm_mon + 1 << "-" << t.tm_mday;
+    ssm << ".log";
+
+    return ssm.str();
 }
 
 bool FileLogAppender::ReOpen() {

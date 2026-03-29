@@ -57,4 +57,39 @@ public:
     static void MakeSurePathExist(const std::string& path);
 };
 
+class Date {
+public:
+    /** 
+     * @brief 获取当前时间戳
+     * @return time_t 自 1970-01-01 以来的秒数，如果系统没有时间，则返回 -1
+     */
+    static time_t Now() {
+        return time(nullptr);
+    }
+
+    /** 
+     * @brief 跨平台的时间结构体转换
+     * @param[in] time 时间戳指针
+     * @param[out] t 输出的时间结构体
+     */
+    static void LocalTime(const time_t* time, struct tm* t) {
+#ifdef _WIN32
+        localtime_s(t, time);
+#else
+        localtime_r(time, t);
+#endif
+    }
+
+    /** 
+     * @brief 获取当前时间的 tm 结构体
+     * @return struct tm 时间结构体
+     */
+    static struct tm GetTimeSet() {
+        struct tm t;
+        time_t time_stamp = Date::Now();
+        LocalTime(&time_stamp, &t);
+        return t;
+    }
+};
+
 #endif
