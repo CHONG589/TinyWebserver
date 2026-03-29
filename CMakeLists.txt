@@ -3,6 +3,8 @@ project(TinyWebServer)
 
 # 设置可执行文件输出目录到 bin
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+# 设置库的输出路径
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 # C++ 标准
 set(CMAKE_CXX_STANDARD 14)
@@ -10,7 +12,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # 编译选项
-add_compile_options(-Wall -g -O2)
+# add_compile_options(-Wall -g -O2)
+
+# 指定编译选项
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -O0 -ggdb -Wall -Werror")
 
 # 线程库
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
@@ -40,7 +45,7 @@ file(GLOB_RECURSE LIB_SRC_FILES
 )
 
 # 创建核心库
-add_library(TinyWebServerLib STATIC ${LIB_SRC_FILES})
+add_library(TinyWebServerLib SHARED ${LIB_SRC_FILES})
 target_link_libraries(TinyWebServerLib
     PUBLIC
 #    jsoncpp_lib
