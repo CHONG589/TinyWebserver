@@ -5,6 +5,8 @@
 
 #include "db/Connection.h"
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 /**
  * @brief 构造函数
  * 初始化 MySQL 连接句柄，并设置字符集为 UTF-8
@@ -43,7 +45,7 @@ bool Connection::Connect(const std::string &ip, const uint16_t port, const std::
     // 建立到 MySQL 的真实连接；成功则返回非空连接句柄
     m_conn = mysql_real_connect(m_conn, ip.c_str(), user.c_str(), pwd.c_str(), db.c_str(), port, nullptr, 0);
     if (m_conn == nullptr) {
-        LOG_ERROR() << "MySQL Connect Error: " << mysql_error(m_conn);
+        LOG_ERROR(g_logger) << "MySQL Connect Error: " << mysql_error(m_conn);
         return false;
     }
     return true;
@@ -60,7 +62,7 @@ bool Connection::Update(const std::string &sql) {
     // 执行写语句（INSERT/UPDATE/DELETE 等）；返回 0 表示成功
     if (mysql_query(m_conn, sql.c_str()) != 0) {
         // mysql_error(m_conn) 返回错误字符串，便于定位问题
-        LOG_WARN() << "SQL " << sql << " 更新失败：" << mysql_error(m_conn);
+        LOG_WARN(g_logger) << "SQL " << sql << " 更新失败：" << mysql_error(m_conn);
         return false;
     }
     return true;
@@ -79,7 +81,7 @@ MYSQL_RES *Connection::Query(const std::string &sql) {
     // 执行查询语句；非 0 表示失败
     if (mysql_query(m_conn, sql.c_str()) != 0) {
         // 返回 nullptr 表示失败；请根据业务场景做判空处理
-        LOG_WARN() << "SQL " << sql << " 查询失败：" << mysql_error(m_conn);
+        LOG_WARN(g_logger) << "SQL " << sql << " 查询失败：" << mysql_error(m_conn);
         return nullptr;
     }
     // 使用流式结果集读取；使用方应在读取完毕后调用 mysql_free_result 释放

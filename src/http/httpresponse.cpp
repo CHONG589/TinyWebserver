@@ -1,5 +1,7 @@
 #include "http/httpresponse.h"
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 const std::unordered_map<std::string, std::string> HttpResponse::SUFFIX_TYPE = {
     { ".html",  "text/html" },
     { ".xml",   "text/xml" },
@@ -71,10 +73,10 @@ void HttpResponse::Init(const std::string& srcDir, std::string& path, bool isKee
  */
 void HttpResponse::MakeResponse(Buffer& buff) {
     /* 判断请求的资源文件 */
-    LOG_DEBUG() << "file path " << (srcDir_ + path_);
+    LOG_DEBUG(g_logger) << "file path " << (srcDir_ + path_);
     int ret = stat(((srcDir_ + path_).data()), &mmFileStat_);
     int flag = S_ISDIR(mmFileStat_.st_mode);
-    LOG_DEBUG() << "flag = " << flag << ", ret = " << ret;
+    LOG_DEBUG(g_logger) << "flag = " << flag << ", ret = " << ret;
     if(ret < 0 || flag) {
         code_ = 404;
     }
@@ -167,10 +169,10 @@ void HttpResponse::AddContent_(Buffer& buff) {
     }
 
     // 将文件映射到内存提高文件的访问速度  MAP_PRIVATE 建立一个写入时拷贝的私有映射
-    LOG_DEBUG() << "file path " << (srcDir_ + path_);
+    LOG_DEBUG(g_logger) << "file path " << (srcDir_ + path_);
     int* mmRet = (int*)mmap(0, mmFileStat_.st_size, PROT_READ, MAP_PRIVATE, srcFd, 0);
     if(mmRet == (int*)MAP_FAILED) {
-        LOG_ERROR() << "mmap error: " << strerror(errno) << " path=" << (srcDir_ + path_);
+        LOG_ERROR(g_logger) << "mmap error: " << strerror(errno) << " path=" << (srcDir_ + path_);
         ErrorContent(buff, "File NotFound!");
         return; 
     }

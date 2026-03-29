@@ -8,7 +8,7 @@
 #include <sys/mman.h>    // mmap, munmap
 
 #include "base/buffer.h"
-#include "zchlog.h"
+#include "base/log.h"
 
 class HttpResponse {
 public:

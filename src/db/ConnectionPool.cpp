@@ -4,8 +4,36 @@
 // - 关键并发原语：std::mutex + std::condition_variable 保护队列与线程协作
 #include <fstream>
 
-#include <json/json.h>
 #include "db/ConnectionPool.h"
+
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
+static zch::ConfigVar<std::string>::ptr g_db_ip =
+    zch::Config::Lookup("database.ip", std::string("127.0.0.1"), "database ip address");
+
+static zch::ConfigVar<uint16_t>::ptr g_db_port =
+    zch::Config::Lookup("database.port", (uint16_t)(3306), "database port");
+
+static zch::ConfigVar<std::string>::ptr g_db_user =
+    zch::Config::Lookup("database.user", std::string(""), "database user");
+
+static zch::ConfigVar<std::string>::ptr g_db_pwd =
+    zch::Config::Lookup("database.pwd", std::string(""), "database passwd");
+
+static zch::ConfigVar<std::string>::ptr g_db_name =
+    zch::Config::Lookup("database.db", std::string(""), "database name");
+
+static zch::ConfigVar<size_t>::ptr g_db_min_size =
+    zch::Config::Lookup("database.minsize", (size_t)(100), "connectPool min size");
+
+static zch::ConfigVar<size_t>::ptr g_db_max_size =
+    zch::Config::Lookup("database.maxsize", (size_t)(1024), "connectPool max size");
+
+static zch::ConfigVar<size_t>::ptr g_db_max_idle_time =
+    zch::Config::Lookup("database.maxidletime", (size_t)(5000), "connectPool max idle time");
+
+static zch::ConfigVar<size_t>::ptr g_db_timeout =
+    zch::Config::Lookup("database.timeout", (size_t)(1000), "connectPool timeout"); 
 
 /**
  * @brief 获取连接池单例
@@ -54,11 +82,15 @@ std::shared_ptr<Connection> ConnectionPool::GetConnection() {
  */
 ConnectionPool::ConnectionPool() {
 
-    // 加载 JSON 配置文件
-    if (!LoadConfigFile()) {
-        LOG_ERROR() << "load db_config.json failed";
-        return;
-    }
+    m_ip = g_db_ip->GetValue();
+    m_port = g_db_port->GetValue();
+    m_user = g_db_user->GetValue();
+    m_pwd = g_db_pwd->GetValue();
+    m_db = g_db_name->GetValue();
+    m_minSize = g_db_min_size->GetValue();
+    m_maxSize = g_db_max_size->GetValue();
+    m_maxIdleTime = g_db_max_idle_time->GetValue();
+    m_connectionTimeout = g_db_timeout->GetValue();
 
     // 创建初始数量的连接（维持不低于 _minSize）
     for (size_t i = 0; i < m_minSize; ++i) {
@@ -94,56 +126,6 @@ ConnectionPool::~ConnectionPool() {
         m_connectionQueue.pop();
         delete ptr;
     }
-}
-
-/**
- * @brief 加载 JSON 配置文件
- * @return 成功返回 true，失败返回 false
- * 说明：校验每个字段的类型有效性，并设置池参数与数据库连接信息
- */
-bool ConnectionPool::LoadConfigFile() {
-    // 从 JSON 文件加载配置；相对路径依赖于可执行文件的工作目录
-    std::ifstream ifs("/home/zch/Project/TinyWebserver/config/db_config.json");
-    if (!ifs.is_open()) {
-        LOG_ERROR() << "open json file failed: /home/zch/Project/TinyWebserver/config/db_config.json";
-        return false;
-    }
-    
-    Json::Reader reader;
-    Json::Value js;
-    if (!reader.parse(ifs, js)) {
-        LOG_ERROR() << "JSON parse error";
-        return false;
-    }
-
-    if (!js.isObject()) {
-        LOG_ERROR() << "JSON is NOT Object";
-        return false;
-    }
-    // 字段类型校验，保证配置的健壮性
-    if (!js["ip"].isString() ||
-        !js["port"].isIntegral() ||
-        !js["user"].isString() ||
-        !js["pwd"].isString() ||
-        !js["db"].isString() ||
-        !js["minSize"].isIntegral() ||
-        !js["maxSize"].isIntegral() ||
-        !js["maxIdleTime"].isIntegral() ||
-        !js["timeout"].isIntegral()) {
-        LOG_ERROR() << "JSON The data type does not match";
-        return false;
-    }
-    m_ip = js["ip"].asString();
-    m_port = js["port"].asUInt();
-    m_user = js["user"].asString();
-    m_pwd = js["pwd"].asString();
-    m_db = js["db"].asString();
-    m_minSize = js["minSize"].asUInt();
-    m_maxSize = js["maxSize"].asUInt();
-    m_maxIdleTime = js["maxIdleTime"].asUInt();     // 秒
-    m_connectionTimeout = js["timeout"].asUInt();   // 微秒
-
-    return true;
 }
 
 /**

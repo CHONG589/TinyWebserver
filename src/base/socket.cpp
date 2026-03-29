@@ -3,6 +3,8 @@
 #include "base/fd_manager.h"
 // #include "hook.h"
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 /**
  * @brief 构造函数
  * @param[in] family 协议簇
@@ -144,7 +146,7 @@ int64_t Socket::getSendTimeout() {
  */
 bool Socket::setOption(int level, int option, const void *result, socklen_t len) {
     if (setsockopt(m_sock, level, option, result, (socklen_t)len)) {
-        LOG_WARN() << "setOption(" << level << ", " << option << ") error: " << strerror(errno);
+        LOG_WARN(g_logger) << "setOption(" << level << ", " << option << ") error: " << strerror(errno);
         return false;
     }
     return true;
@@ -162,7 +164,7 @@ bool Socket::setOption(int level, int option, const void *result, socklen_t len)
 bool Socket::getOption(int level, int option, void *result, socklen_t *len) {
     int rt = getsockopt(m_sock, level, option, result, (socklen_t *)len);
     if (rt) {
-        LOG_WARN() << "getOption(" << level << ", " << option << ") error: " << strerror(errno);
+        LOG_WARN(g_logger) << "getOption(" << level << ", " << option << ") error: " << strerror(errno);
         return false;
     }
     return true;
@@ -217,12 +219,12 @@ bool Socket::bind(const Address::ptr addr) {
     }
     
     if(addr->getFamily() != m_family) {
-        LOG_ERROR() << "bind sock.family and addr.family not equal!";
+        LOG_ERROR(g_logger) << "bind sock.family and addr.family not equal!";
         return false;
     }
 
     if(::bind(m_sock, addr->getAddr(), addr->getAddrLen())) {
-        LOG_ERROR() << "bind error: " << strerror(errno) << " addr=" << addr->toString();
+        LOG_ERROR(g_logger) << "bind error: " << strerror(errno) << " addr=" << addr->toString();
         return false;
     }
     //防止一开始传进来的addr为nullptr
@@ -245,13 +247,13 @@ bool Socket::connect(const Address::ptr addr, uint64_t timeout_ms) {
         }
     }
     if(addr->getFamily() != m_family) {
-        LOG_ERROR() << "connect sock.family and addr.family not equal!";
+        LOG_ERROR(g_logger) << "connect sock.family and addr.family not equal!";
         return false;
     }
 
     if(timeout_ms == (uint64_t)-1) {
         if(::connect(m_sock, addr->getAddr(), addr->getAddrLen())) {
-            LOG_ERROR() << "connect error: " << strerror(errno) << " addr=" << addr->toString();
+            LOG_ERROR(g_logger) << "connect error: " << strerror(errno) << " addr=" << addr->toString();
             close();
             return false;
         }
@@ -276,7 +278,7 @@ bool Socket::connect(const Address::ptr addr, uint64_t timeout_ms) {
  */
 bool Socket::reconnect(uint64_t timeout_ms) {
     if(!m_remoteAddress) {
-        LOG_ERROR() << "reconnect m_remoteAddress is null";
+        LOG_ERROR(g_logger) << "reconnect m_remoteAddress is null";
         return false;
     }
     m_localAddress.reset();
@@ -290,11 +292,11 @@ bool Socket::reconnect(uint64_t timeout_ms) {
  */
 bool Socket::listen(int backlog) {
     if(!isValid()) {
-        LOG_ERROR() << "listen error sock = -1";
+        LOG_ERROR(g_logger) << "listen error sock = -1";
         return false;
     }
     if(::listen(m_sock, backlog)) {
-        LOG_ERROR() << "listen error: " << strerror(errno) << " backlog=" << backlog;
+        LOG_ERROR(g_logger) << "listen error: " << strerror(errno) << " backlog=" << backlog;
         return false;
     }
     return true;
@@ -309,7 +311,7 @@ Socket::ptr Socket::accept() {
     int newsock = ::accept(m_sock, nullptr, nullptr);
     if(newsock == -1) {
         if(errno != EAGAIN && errno != EWOULDBLOCK) {
-            LOG_ERROR() << "accept error: " << strerror(errno) << " m_sock=" << m_sock;
+            LOG_ERROR(g_logger) << "accept error: " << strerror(errno) << " m_sock=" << m_sock;
         }
         return nullptr;
     }
@@ -509,7 +511,7 @@ Address::ptr Socket::getRemoteAddress() {
     socklen_t addrlen = result->getAddrLen();
     // 此函数是获取远端的地址
     if(getpeername(m_sock, result->getAddr(), &addrlen)) {
-        LOG_ERROR() << "getpeername error: " << strerror(errno) << " m_sock=" << m_sock;
+        LOG_ERROR(g_logger) << "getpeername error: " << strerror(errno) << " m_sock=" << m_sock;
         return Address::ptr(new UnknownAddress(m_family));
     }
     if (m_family == AF_UNIX) {
@@ -547,7 +549,7 @@ Address::ptr Socket::getLocalAddress() {
     socklen_t addrlen = result->getAddrLen();
     //此函数是获取本地地址
     if (getsockname(m_sock, result->getAddr(), &addrlen)) {
-        LOG_ERROR() << "getsockname error: " << strerror(errno) << " m_sock=" << m_sock;
+        LOG_ERROR(g_logger) << "getsockname error: " << strerror(errno) << " m_sock=" << m_sock;
         return Address::ptr(new UnknownAddress(m_family));
     }
     if (m_family == AF_UNIX) {
@@ -622,6 +624,6 @@ void Socket::newSock() {
     if (m_sock != -1) {
         initSock();
     } else {
-        LOG_ERROR() << "socket() error: " << strerror(errno);
+        LOG_ERROR(g_logger) << "socket() error: " << strerror(errno);
     }
 }

@@ -1,0 +1,6 @@
+server:
+  read_timeout: 120000s
+  resources_dir: /home/zch/Project/TinyWebserver/resources
+  ip: 0.0.0.0
+  port: 8000
+  thread_num: 4

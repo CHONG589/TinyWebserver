@@ -11,6 +11,8 @@ const std::unordered_map<std::string, int> HttpRequest::DEFAULT_HTML_TAG {
     {"/login.html", 1}, {"/register.html", 0}
 };
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 /**
  * @brief 初始化 HttpRequest 对象
  */
@@ -29,7 +31,7 @@ void HttpRequest::Init() {
 bool HttpRequest::parse(Buffer& buff) {
     const char END[] = "\r\n";
     if(buff.ReadableBytes() == 0) {
-        LOG_WARN() << "没有可读的字节";
+        LOG_WARN(g_logger) << "没有可读的字节";
         return false;
     }
         
@@ -97,7 +99,7 @@ bool HttpRequest::ParseRequestLine_(const std::string& line) {
         state_ = HEADERS;
         return true;
     }
-    LOG_ERROR() << "RequestLine Error: " << line;
+    LOG_ERROR(g_logger) << "RequestLine Error: " << line;
     return false;
 }
 
@@ -172,7 +174,7 @@ void HttpRequest::ParseFromUrlencoded_() {
             value = body_.substr(j, i - j);
             j = i + 1;
             post_[key] = value;
-            LOG_DEBUG() << key << " = " << value;
+            LOG_DEBUG(g_logger) << key << " = " << value;
             break;
         default:
             break;
@@ -195,7 +197,7 @@ void HttpRequest::ParsePost_() {
         if(DEFAULT_HTML_TAG.count(path_)) { 
             // 如果是登录/注册的path
             int tag = DEFAULT_HTML_TAG.find(path_)->second; 
-            LOG_DEBUG() << "Tag:" << tag;
+            LOG_DEBUG(g_logger) << "Tag:" << tag;
             if(tag == 0 || tag == 1) {
                 bool isLogin = (tag == 1);  // 为1则是登录
                 if(UserVerify(post_["username"], post_["password"], isLogin)) {
@@ -219,7 +221,7 @@ void HttpRequest::ParseBody_(const std::string& line) {
     //用另外一个函数来处理。
     ParsePost_();
     state_ = FINISH;    // 状态转换为下一个状态
-    LOG_DEBUG() << "Body:" << line << ", len:" << line.size();
+    LOG_DEBUG(g_logger) << "Body:" << line << ", len:" << line.size();
 }
 
 /**
@@ -247,12 +249,12 @@ bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bo
         return false; 
     }
 
-    LOG_INFO() << "Verify name:" << name << " pwd:" << pwd;
+    LOG_INFO(g_logger) << "Verify name:" << name << " pwd:" << pwd;
     
     // 获取数据库连接
     std::shared_ptr<Connection> conn = ConnectionPool::GetConnectionPool().GetConnection();
     if (!conn) {
-        LOG_ERROR() << "Get database connection failed!";
+        LOG_ERROR(g_logger) << "Get database connection failed!";
         return false;
     }
     
@@ -268,7 +270,7 @@ bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bo
 
     /* 查询用户及密码 */
     snprintf(order, 256, "SELECT username, password FROM user WHERE username='%s' LIMIT 1", name.c_str());
-    LOG_DEBUG() << order;
+    LOG_DEBUG(g_logger) << order;
 
     res = conn->Query(order);
     if(res == nullptr) { 
@@ -276,7 +278,7 @@ bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bo
     }
 
     while(MYSQL_ROW row = mysql_fetch_row(res)) {
-        LOG_DEBUG() << "MYSQL ROW: " << row[0] << " " << row[1];
+        LOG_DEBUG(g_logger) << "MYSQL ROW: " << row[0] << " " << row[1];
         std::string password(row[1]);
         /* 注册行为且用户名未被使用*/
         if(isLogin) {
@@ -284,29 +286,29 @@ bool HttpRequest::UserVerify(const std::string &name, const std::string &pwd, bo
                 flag = true; 
             } else {
                 flag = false;
-                LOG_INFO() << "pwd error!";
+                LOG_INFO(g_logger) << "pwd error!";
             }
         } else { 
             flag = false; 
-            LOG_INFO() << "user used!";
+            LOG_INFO(g_logger) << "user used!";
         }
     }
     mysql_free_result(res);
 
     /* 注册行为 且用户名未被使用*/
     if(!isLogin && flag == true) {
-        LOG_DEBUG() << "regirster!";
+        LOG_DEBUG(g_logger) << "regirster!";
         bzero(order, 256);
         snprintf(order, 256,"INSERT INTO user(username, password) VALUES('%s','%s')", name.c_str(), pwd.c_str());
-        LOG_DEBUG() << order;
+        LOG_DEBUG(g_logger) << order;
         if(!conn->Update(order)) { 
-            LOG_ERROR() << "Insert error!";
+            LOG_ERROR(g_logger) << "Insert error!";
             flag = false; 
         }
         flag = true;
     }
 
-    LOG_INFO() << "UserVerify success!!";
+    LOG_INFO(g_logger) << "UserVerify success!!";
     return flag;
 }
 

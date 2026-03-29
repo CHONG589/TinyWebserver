@@ -1,5 +1,12 @@
 #include "base/tcp_server.h"
 #include "base/http_server.h"
+#include "base/config.h"
+
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
+static zch::ConfigVar<uint64_t>::ptr g_tcp_server_read_timeout =
+    zch::Config::Lookup("server.read_timeout", (uint64_t)(60 * 1000 * 2),
+            "tcp server read timeout");
 
 /**
  * @brief 构造函数
@@ -9,7 +16,7 @@
 TcpServer::TcpServer(IOManager *io_worker, IOManager *accept_worker)
     : m_ioWorker(io_worker)
     , m_acceptWorker(accept_worker)
-    , m_recvTimeout((uint64_t)(60 * 1000 * 2))
+    , m_recvTimeout(g_tcp_server_read_timeout->GetValue())
     , m_name("zch/1.0.0")
     , m_type("tcp")
     , m_isStop(true) {
@@ -48,13 +55,13 @@ bool TcpServer::bind(const std::vector<Address::ptr> &addrs
     for(auto &addr : addrs) {
         Socket::ptr sock = Socket::CreateTCP(addr);
         if(!sock->bind(addr)) {
-            LOG_ERROR() << "bind fail errno = " << errno << ", errstr = " << strerror(errno);
+            LOG_ERROR(g_logger) << "bind fail errno = " << errno << ", errstr = " << strerror(errno);
             fails.push_back(addr);
             continue;
         }
 
         if(!sock->listen()) {
-            LOG_ERROR() << "listen fail errno = " << errno << ", errstr = " << strerror(errno);
+            LOG_ERROR(g_logger) << "listen fail errno = " << errno << ", errstr = " << strerror(errno);
             fails.push_back(addr);
             continue;
         }
@@ -67,7 +74,7 @@ bool TcpServer::bind(const std::vector<Address::ptr> &addrs
     }
 
     for(auto &i : m_socks) {
-        LOG_INFO() << "type=" << m_type << " name=" << m_name << " server bind success: " << *i->getLocalAddress();
+        LOG_INFO(g_logger) << "type=" << m_type << " name=" << m_name << " server bind success: " << *i->getLocalAddress();
     }
     return true;
 }
@@ -109,7 +116,7 @@ void TcpServer::stop() {
  * @param[in] client 新连接的socket
  */
 void TcpServer::handleClient(Socket::ptr client) {
-    LOG_DEBUG() << "handleClient: " << client->getSocket();
+    LOG_DEBUG(g_logger) << "handleClient: " << client->getSocket();
 }
 
 /**

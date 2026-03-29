@@ -11,7 +11,7 @@
 #include "base/buffer.h"
 #include "db/ConnectionPool.h"
 #include "db/Connection.h"
-#include "zchlog.h"
+#include "base/log.h"
 
 class HttpRequest {
 public:

@@ -20,15 +20,16 @@ find_package(Threads REQUIRED)
 # find_package(MySQL REQUIRED) # 如果系统没有安装 standard mysql cmake module，可能需要手动指定路径
 # 或者直接链接 mysqlclient (假设库都在标准路径)
 
+# 查找 yaml-cpp
+find_package(yaml-cpp REQUIRED)
+
 # 包含头文件路径
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/deps/zchlog  # zchlog 在 deps 目录
 )
 
 # 添加子目录
-add_subdirectory(deps/jsoncpp)
-add_subdirectory(deps/zchlog)
+# add_subdirectory(deps/jsoncpp)
 
 # 收集源文件（排除 main.cpp 用于创建库）
 file(GLOB_RECURSE LIB_SRC_FILES
@@ -42,10 +43,10 @@ file(GLOB_RECURSE LIB_SRC_FILES
 add_library(TinyWebServerLib STATIC ${LIB_SRC_FILES})
 target_link_libraries(TinyWebServerLib
     PUBLIC
-    zchlog
-    jsoncpp_lib
+#    jsoncpp_lib
     Threads::Threads
     mysqlclient
+    yaml-cpp
 )
 
 # 生成可执行文件

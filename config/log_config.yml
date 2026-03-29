@@ -1,0 +1,16 @@
+logs:
+    - name: root
+      level: debug
+      appenders:
+          - type: StdoutLogAppender
+            pattern: "[%d{%Y-%m-%d %H:%M:%S}][%rms][%p][%c][%f:%l] %m%n"
+          - type: FileLogAppender
+            file: /home/zch/Project/TinyWebserver/logs/root/
+            pattern: "[%d{%Y-%m-%d %H:%M:%S}][%rms][%p][%c][%f:%l] %m%n"
+    - name: system
+      level: debug
+      appenders:
+          - type: StdoutLogAppender
+          - type: FileLogAppender
+            file: /home/zch/Project/TinyWebserver/logs/system/
+            pattern: "[%d{%Y-%m-%d %H:%M:%S}][%rms][%p][%c][%f:%l] %m%n"

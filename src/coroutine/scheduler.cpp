@@ -8,6 +8,8 @@ static thread_local Scheduler *t_scheduler = nullptr;
 // 当前线程的调度协程，每个线程都独有一份
 static thread_local Fiber *t_scheduler_fiber = nullptr;
 
+static zch::Logger::ptr g_logger = LOG_NAME("system");
+
 /**
 * @brief Construct a new Scheduler object
 * @param threads 线程数
@@ -16,10 +18,10 @@ static thread_local Fiber *t_scheduler_fiber = nullptr;
 */
 Scheduler::Scheduler(size_t threads, bool use_caller, const std::string &name) {
 
-    LOG_INFO() << "创建调度器，线程数：" << threads << ", use_caller: " << use_caller << ", schedule: " << name;
+    LOG_INFO(g_logger) << "创建调度器，线程数：" << threads << ", use_caller: " << use_caller << ", schedule: " << name;
 
     if(threads <= 0) {
-        LOG_WARN() << "Scheduler Construct param threads is <= 0!";
+        LOG_WARN(g_logger) << "Scheduler Construct param threads is <= 0!";
         assert(false);
     }
 
@@ -74,7 +76,7 @@ void Scheduler::setThis() {
 }
 
 Scheduler::~Scheduler() {
-    LOG_INFO() << "Scheduler::~Scheduler " << m_name.c_str() << " is deleting!";
+    LOG_INFO(g_logger) << "Scheduler::~Scheduler " << m_name.c_str() << " is deleting!";
     assert(m_stopping);
     if (GetThis() == this) {
         t_scheduler = nullptr;
@@ -85,10 +87,10 @@ Scheduler::~Scheduler() {
 * @brief 启动调度器, 对调度器进行一些列的初始化（初始化线程池）。
 */
 void Scheduler::start() {
-    LOG_INFO() << "Scheduler::start " << m_name.c_str();
+    LOG_INFO(g_logger) << "Scheduler::start " << m_name.c_str();
     MutexType::Lock lock(m_mutex);
     if (m_stopping) {
-        LOG_WARN() << "Scheduler::start " << m_name << " error";
+        LOG_WARN(g_logger) << "Scheduler::start " << m_name << " error";
         return;
     }
     // 线程池是否为空
@@ -117,14 +119,14 @@ bool Scheduler::stopping() {
 * @brief 通知协程调度器有任务了
 */
 void Scheduler::tickle() { 
-    LOG_DEBUG() << "ticle scheduler...";
+    LOG_DEBUG(g_logger) << "ticle scheduler...";
 }
 
 /**
 * @brief 空闲协程，没有任务是执行的协程
 */
 void Scheduler::idle() {
-    LOG_DEBUG() << "Scheduler::idle....";
+    LOG_DEBUG(g_logger) << "Scheduler::idle....";
     while (!stopping()) {
         Fiber::GetThis()->yield();
     }
@@ -134,7 +136,7 @@ void Scheduler::idle() {
 * @brief 停止调度器，等所有调度任务都执行完了再返回
 */
 void Scheduler::stop() {
-    LOG_INFO() << "Scheduler::stop...";
+    LOG_INFO(g_logger) << "Scheduler::stop...";
     if (stopping()) {
         // 满足停止条件
         return ;
@@ -165,7 +167,7 @@ void Scheduler::stop() {
     // 如果 caller 线程的调度协程存在，这里还要进行调度完，即切换到任务协程去消耗任务。
     if (m_rootFiber) {
         m_rootFiber->resume();
-        LOG_INFO() << "Scheduler::stop m_rootFiber end";
+        LOG_INFO(g_logger) << "Scheduler::stop m_rootFiber end";
     }
 
     std::vector<Thread::ptr> thrs;
@@ -184,7 +186,7 @@ void Scheduler::stop() {
 * @brief 协程调度函数
 */
 void Scheduler::run() {
-    LOG_DEBUG() << "Scheduler::run begin";
+    LOG_DEBUG(g_logger) << "Scheduler::run begin";
     // 运行到本调度器，设置当前线程的调度器。
     setThis();
     if (GetThreadId() != m_rootThread) {
@@ -246,7 +248,7 @@ void Scheduler::run() {
         if (task.fiber) {
             // resume协程，resume返回时，协程要么执行完了，要么半路yield了，
             // 总之这个任务就算完成了，活跃线程数减一
-            LOG_DEBUG() << "run fiber in scheduler";
+            LOG_DEBUG(g_logger) << "run fiber in scheduler";
             task.fiber->resume();
             --m_activeThreadCount;
             task.reset();
@@ -261,7 +263,7 @@ void Scheduler::run() {
                 cb_fiber.reset(new Fiber(task.cb));
             }
             task.reset();
-            LOG_DEBUG() << "run fun in scheduler";
+            LOG_DEBUG(g_logger) << "run fun in scheduler";
             cb_fiber->resume();
             --m_activeThreadCount;
             cb_fiber.reset();
@@ -269,7 +271,7 @@ void Scheduler::run() {
             // 进到这个分支情况一定是任务队列空了，调度idle协程即可
             if (idle_fiber->getState() == Fiber::TERM) {
                 // 如果 idle_fiber 已经终止了，说明调度器已经停止了，则退出循环。
-                LOG_DEBUG() << "Scheduler::run idle fiber term";
+                LOG_DEBUG(g_logger) << "Scheduler::run idle fiber term";
                 break;
             }
             // 不是 TERM 状态的话，就会一直 resume 到 idle_fiber 协程，然后又在
@@ -279,5 +281,5 @@ void Scheduler::run() {
             --m_idleThreadCount;
         }
     }
-    LOG_DEBUG() << "Scheduler::run exit";
+    LOG_DEBUG(g_logger) << "Scheduler::run exit";
 }

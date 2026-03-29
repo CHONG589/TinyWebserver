@@ -1,0 +1,10 @@
+database:
+  ip: 127.0.0.1
+  port: 3306
+  user: root
+  pwd: 589520
+  db: testdb
+  minsize: 100
+  maxsize: 1024
+  maxidletime: 5000
+  timeout: 1000
