@@ -92,4 +92,26 @@ public:
     }
 };
 
+/**
+ * @brief 字符串辅助类
+ */
+class StringUtil {
+public:
+    /**
+     * @brief url编码
+     * @param[in] str 原始字符串
+     * @param[in] space_as_plus 是否将空格编码成+号，如果为false，则空格编码成%20
+     * @return 编码后的字符串
+     */
+    static std::string UrlEncode(const std::string& str, bool space_as_plus = true);
+
+    /**
+     * @brief url解码
+     * @param[in] str url字符串
+     * @param[in] space_as_plus 是否将+号解码为空格
+     * @return 解析后的字符串
+     */
+    static std::string UrlDecode(const std::string& str, bool space_as_plus = true);
+};
+
 #endif
