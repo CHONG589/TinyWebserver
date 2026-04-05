@@ -41,6 +41,7 @@ file(GLOB_RECURSE LIB_SRC_FILES
     "src/base/*.cpp"
     "src/coroutine/*.cpp"
     "src/http/*.cpp"
+    "src/http/transitionFiles/*.cpp"
     "src/http/http-parser/*.c"
     "src/db/*.cpp"
 )

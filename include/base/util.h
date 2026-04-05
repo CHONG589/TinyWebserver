@@ -21,6 +21,11 @@ pid_t GetThreadId();
 uint64_t GetElapsedMS();
 
 /**
+ * @brief 日期时间转字符串
+ */
+std::string Time2Str(time_t ts = time(0), const std::string &format = "%Y-%m-%d %H:%M:%S");
+
+/**
  * @brief 获取T类型的类型字符串
  */
 template <class T>
@@ -112,6 +117,14 @@ public:
      * @return 解析后的字符串
      */
     static std::string UrlDecode(const std::string& str, bool space_as_plus = true);
+
+    /**
+     * @brief 移除字符串首尾的指定字符串
+     * @param[] str 输入字符串
+     * @param[] delimit 待移除的字符串
+     * @return  移除后的字符串
+     */
+    static std::string Trim(const std::string& str, const std::string& delimit = " \t\r\n");
 };
 
 #endif

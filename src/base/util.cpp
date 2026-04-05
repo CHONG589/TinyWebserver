@@ -27,6 +27,15 @@ uint64_t GetElapsedMS() {
     return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 }
 
+std::string Time2Str(time_t ts, const std::string &format) {
+    struct tm tm;
+    localtime_r(&ts, &tm);
+    char buf[64];
+    strftime(buf, sizeof(buf), format.c_str(), &tm);
+
+    return buf;
+}
+
 void FSUtil::ListAllFile(std::vector<std::string> &files, const std::string &path, const std::string &subfix) {
     if (access(path.c_str(), 0) != 0) {
         return;
@@ -233,4 +242,14 @@ std::string StringUtil::UrlDecode(const std::string& str, bool space_as_plus) {
         delete ss;
         return rt;
     }
+}
+
+std::string StringUtil::Trim(const std::string& str, const std::string& delimit) {
+    auto begin = str.find_first_not_of(delimit);
+    if(begin == std::string::npos) {
+        return "";
+    }
+    
+    auto end = str.find_last_not_of(delimit);
+    return str.substr(begin, end - begin + 1);
 }
