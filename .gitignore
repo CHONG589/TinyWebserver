@@ -54,3 +54,12 @@ Makefile
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json
+
+# Claude runtime
+.claude/cache/
+.claude/tmp/
+.claude/logs/
+
+# Secrets
+.claude/*.json
+.claude/*.env
