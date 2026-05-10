@@ -434,11 +434,6 @@ public:
     void SetLevel(LogLevel::Level level) { m_level = level; }
 
     /**
-     * @brief 设置日志级别
-     */
-    void GetLevel(LogLevel::Level level) { m_level = level; }
-
-    /**
      * @brief 获取日志级别
      */
     LogLevel::Level GetLevel() const { return m_level; }
